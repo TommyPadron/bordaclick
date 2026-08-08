@@ -1057,10 +1057,20 @@ if pagina == "Consultas":
                     orden,
                     detalle_orden
                 )
+                
+                with open(
+                    nombre_pdf,
+                    "rb"
+                ) as archivo_pdf:
 
-                st.success(
-                    f"✅ PDF generado: {nombre_pdf}"
-                )
+                    st.download_button(
+                        "📄 Descargar PDF",
+                        data=archivo_pdf,
+                        file_name=nombre_pdf,
+                        mime="application/pdf"
+                    )
+
+
         if st.button(
             "📑 Exportar Orden Excel"
         ):
@@ -1080,10 +1090,19 @@ if pagina == "Consultas":
                     detalle_orden
                 )
 
-                st.success(
-                    f"✅ Excel generado: {nombre_excel}"
-                )  
-                       
+
+                with open(
+                    nombre_excel,
+                    "rb"
+                ) as archivo_excel:
+
+                    st.download_button(
+                        "📊 Descargar Excel",
+                        data=archivo_excel,
+                        file_name=nombre_excel,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                      
                
         
         st.subheader("👤 Datos del Cliente")
@@ -1479,12 +1498,13 @@ if pagina == "Nueva Solicitud":
 
     st.header("Información de Pago")
 
-    abono = st.number_input(
-        "Abono recibido ($)",
-        min_value=0.0,
-        value=0.0,
-        step=1.0
-    )
+    abono = 0.0
+#  abono = st.number_input(
+#       "Abono recibido ($)",
+#       min_value=0.0,
+#       value=0.0,
+#       step=1.0
+#   )
 
     saldo_pendiente = (
         subtotal_bordado +
