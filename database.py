@@ -1,0 +1,802 @@
+import sqlite3
+import pandas as pd
+
+
+DATABASE = "bordaclick.db"
+
+def crear_bd():
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ordenes (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    nombre TEXT,
+    telefono TEXT,
+    correo TEXT,
+    colegio TEXT,
+
+    cantidad_total INTEGER,
+
+    tipo_logo TEXT,
+
+    nombre_bordado TEXT,
+
+    cantidad_nombre INTEGER,
+
+    delivery TEXT,
+
+    zona_delivery TEXT,
+
+    fecha_entrega TEXT,
+
+    precio_bordado REAL,
+
+    subtotal_bordado REAL,
+
+    subtotal_nombres REAL,
+
+    delivery_costo REAL,
+
+    abono REAL,
+
+    saldo_pendiente REAL,
+    
+    status TEXT
+
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS orden_detalle (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    orden_id INTEGER,
+
+    tipo_prenda TEXT,
+
+    talla TEXT,
+
+    marca TEXT,
+
+    color TEXT,
+
+    cantidad INTEGER,
+
+    FOREIGN KEY (orden_id)
+    REFERENCES ordenes(id)
+
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS configuracion_bordados (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        colegio TEXT UNIQUE,
+
+        precio_bordado REAL
+
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS configuracion_general (
+
+        parametro TEXT PRIMARY KEY,
+
+        valor REAL
+
+    )
+    """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS colegios (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nombre TEXT UNIQUE,
+
+        precio_bordado REAL
+
+    )
+    """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tipos_prenda (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nombre TEXT UNIQUE
+
+    )
+    """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS marcas (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nombre TEXT UNIQUE
+
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS colores (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nombre TEXT UNIQUE
+
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tallas (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nombre TEXT UNIQUE
+
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS colores (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nombre TEXT UNIQUE
+
+    )
+    """)
+
+    conn.commit()
+
+    conn.close()
+
+def guardar_orden(
+    nombre,
+    telefono,
+    correo,
+    colegio,
+    cantidad_total,
+    tipo_logo,
+    nombre_bordado,
+    cantidad_nombre,
+    delivery,
+    zona_delivery,
+    fecha_entrega,
+    precio_bordado,
+    subtotal_bordado,
+    subtotal_nombres,
+    delivery_costo,
+    abono,
+    saldo_pendiente,
+    status
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO ordenes (
+            nombre,
+            telefono,
+            correo,
+            colegio,
+            cantidad_total,
+            tipo_logo,
+            nombre_bordado,
+            cantidad_nombre,
+            delivery,
+            zona_delivery,
+            fecha_entrega,
+            precio_bordado,
+            subtotal_bordado,
+            subtotal_nombres,
+            delivery_costo,
+            abono,
+            saldo_pendiente,
+            status
+        )
+        VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?
+        )
+    """, (
+        nombre,
+        telefono,
+        correo,
+        colegio,
+        cantidad_total,
+        tipo_logo,
+        nombre_bordado,
+        cantidad_nombre,
+        delivery,
+        zona_delivery,
+        str(fecha_entrega),
+        precio_bordado,
+        subtotal_bordado,
+        subtotal_nombres,
+        delivery_costo,
+        abono,
+        saldo_pendiente,
+        status
+    ))
+
+    conn.commit()
+
+    orden_id = cursor.lastrowid
+
+    conn.close()
+
+    return orden_id
+
+def guardar_detalle(
+    orden_id,
+    tipo_prenda,
+    talla,
+    marca,
+    color,
+    cantidad
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO orden_detalle (
+
+        orden_id,
+        tipo_prenda,
+        talla,
+        marca,
+        color,
+        cantidad
+
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+    """,
+    (
+        orden_id,
+        tipo_prenda,
+        talla,
+        marca,
+        color,
+        cantidad
+    ))
+
+    conn.commit()
+    conn.close()
+
+def obtener_precio_bordado(colegio):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT precio_bordado
+        FROM configuracion_bordados
+        WHERE colegio = ?
+    """, (colegio,))
+
+    resultado = cursor.fetchone()
+
+    conn.close()
+
+    if resultado:
+        return resultado[0]
+
+    return 0
+
+def guardar_precio_bordado(
+    colegio,
+    precio_bordado
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO configuracion_bordados (
+            colegio,
+            precio_bordado
+        )
+        VALUES (?, ?)
+    """,
+    (
+        colegio,
+        precio_bordado
+    ))
+
+    conn.commit()
+    conn.close()
+
+def guardar_catalogo_bordados(df):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM configuracion_bordados"
+    )
+
+    for _, fila in df.iterrows():
+
+        cursor.execute("""
+        INSERT INTO configuracion_bordados (
+            colegio,
+            precio_bordado
+        )
+        VALUES (?, ?)
+        """,
+        (
+            fila["colegio"],
+            fila["precio_bordado"]
+        ))
+
+    conn.commit()
+
+    conn.close()
+
+
+def obtener_catalogo_bordados():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT
+        colegio,
+        precio_bordado
+    FROM configuracion_bordados
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+
+def guardar_parametro(
+    parametro,
+    valor
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT OR REPLACE INTO configuracion_general (
+        parametro,
+        valor
+    )
+    VALUES (?, ?)
+    """,
+    (
+        parametro,
+        valor
+    ))
+
+    conn.commit()
+    conn.close()
+
+def obtener_parametro(
+    parametro
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT valor
+    FROM configuracion_general
+    WHERE parametro = ?
+    """,
+    (parametro,)
+    )
+
+    resultado = cursor.fetchone()
+
+    conn.close()
+
+    if resultado:
+        return resultado[0]
+
+    return 0
+def guardar_colegio(
+    nombre,
+    precio_bordado
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO colegios (
+            nombre,
+            precio_bordado
+        )
+        VALUES (?, ?)
+    """,
+    (
+        nombre,
+        precio_bordado
+    ))
+
+    conn.commit()
+
+    conn.close()
+
+def obtener_ordenes():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT
+        id,
+        nombre,
+        colegio,
+        status,
+        fecha_entrega,
+        saldo_pendiente
+    FROM ordenes
+    ORDER BY id DESC
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+
+def obtener_orden_por_id(orden_id):
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = f"""
+    SELECT *
+    FROM ordenes
+    WHERE id = {orden_id}
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+def obtener_detalle_orden(orden_id):
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = f"""
+    SELECT
+        tipo_prenda,
+        talla,
+        marca,
+        color,
+        cantidad
+    FROM orden_detalle
+    WHERE orden_id = {orden_id}
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+
+def actualizar_status_orden(
+    orden_id,
+    status
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+    
+    print(
+    "ID:",
+    orden_id,
+    type(orden_id)
+    )
+
+    cursor.execute("""
+        UPDATE ordenes
+        SET status = ?
+        WHERE id = ?
+    """,
+    (
+        status,
+        orden_id
+    ))
+    
+    conn.commit()
+    
+    print(
+    "FILAS AFECTADAS:",
+    cursor.rowcount
+    )
+
+    conn.close()
+    
+def obtener_colegios():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT
+        nombre,
+        precio_bordado
+    FROM colegios
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+
+def obtener_precio_colegio(
+    nombre
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT precio_bordado
+        FROM colegios
+        WHERE nombre = ?
+    """,
+    (
+        nombre,
+    ))
+
+    resultado = cursor.fetchone()
+
+    conn.close()
+
+    if resultado:
+
+        return resultado[0]
+
+    return 0
+
+def guardar_tipo_prenda(
+    nombre
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO tipos_prenda (
+            nombre
+        )
+        VALUES (?)
+    """,
+    (
+        nombre,
+    ))
+
+    conn.commit()
+
+    conn.close()
+def obtener_tipos_prenda():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT nombre
+    FROM tipos_prenda
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+def guardar_marca(
+    nombre
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO marcas (
+            nombre
+        )
+        VALUES (?)
+    """,
+    (
+        nombre,
+    ))
+
+    conn.commit()
+
+    conn.close()
+def obtener_marcas():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT nombre
+    FROM marcas
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+def guardar_color(
+    nombre
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO colores (
+            nombre
+        )
+        VALUES (?)
+    """,
+    (
+        nombre,
+    ))
+
+    conn.commit()
+
+    conn.close()
+def obtener_colores():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT nombre
+    FROM colores
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+def guardar_talla(
+    nombre
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO tallas (
+            nombre
+        )
+        VALUES (?)
+    """,
+    (
+        nombre,
+    ))
+
+    conn.commit()
+
+    conn.close()
+def obtener_tallas():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT nombre
+    FROM tallas
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+
+def guardar_color(
+    nombre
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO colores (
+            nombre
+        )
+        VALUES (?)
+    """,
+    (
+        nombre,
+    ))
+
+    conn.commit()
+
+    conn.close()
+    
+def obtener_colores():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT nombre
+    FROM colores
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df
+
+
+
+    
+
+
+
+
+
+
