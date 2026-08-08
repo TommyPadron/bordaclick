@@ -969,6 +969,18 @@ if pagina == "Consultas":
             f"✅ Excel generado: {archivo_excel}"
         )
 
+        with open(
+            archivo_excel,
+            "rb"
+        ) as archivo:
+
+            st.download_button(
+                "📊 Descargar Histórico",
+                data=archivo.read(),
+                file_name=archivo_excel,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
     if not df_ordenes.empty:
 
         orden_seleccionada = st.selectbox(
@@ -1016,6 +1028,19 @@ if pagina == "Consultas":
                 index=indice_estado
             )
 
+#       if st.button(
+#           "💾 Actualizar Estado"
+#       ):
+
+#           actualizar_status_orden(
+#               int(orden["id"]),
+#               estado
+#           )
+
+#           st.success(
+#               f"✅ Excel generado: {archivo_excel}"
+#           )
+
         if st.button(
             "💾 Actualizar Estado"
         ):
@@ -1028,6 +1053,7 @@ if pagina == "Consultas":
             st.success(
                 "✅ Estado actualizado"
             )
+
 
         with col2:
 
