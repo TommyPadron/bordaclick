@@ -482,7 +482,7 @@ def generar_pdf_orden(
         [
             ["Estado", "Fecha Entrega"],
             [
-                "Recibido",
+                str(orden["status"]),
                 str(orden["fecha_entrega"])
             ]
         ],
