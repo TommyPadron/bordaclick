@@ -1028,18 +1028,6 @@ if pagina == "Consultas":
                 index=indice_estado
             )
 
-#       if st.button(
-#           "💾 Actualizar Estado"
-#       ):
-
-#           actualizar_status_orden(
-#               int(orden["id"]),
-#               estado
-#           )
-
-#           st.success(
-#               f"✅ Excel generado: {archivo_excel}"
-#           )
 
         if st.button(
             "💾 Actualizar Estado"
@@ -1064,70 +1052,48 @@ if pagina == "Consultas":
         st.header(
             "📋 Orden de Servicio Bordaclick"
         )
+ 
         if st.button(
             "🖨️ Generar PDF"
         ):
-  
 
-            nombre_pdf = f"Pedido_{int(orden['id']):04d}.pdf"
+            nombre_pdf = generar_pdf_orden(
+                orden,
+                detalle_orden
+            )
 
-            if os.path.exists(nombre_pdf):
+            with open(
+                nombre_pdf,
+                "rb"
+            ) as archivo_pdf:
 
-                st.warning(
-                    "⚠️ Este PDF ya fue generado previamente."
+                st.download_button(
+                    "📄 Descargar PDF",
+                    data=archivo_pdf,
+                    file_name=nombre_pdf,
+                    mime="application/pdf"
                 )
-
-            else:
-
-                nombre_pdf = generar_pdf_orden(
-                    orden,
-                    detalle_orden
-                )
-                
-                with open(
-                    nombre_pdf,
-                    "rb"
-                ) as archivo_pdf:
-
-                    st.download_button(
-                        "📄 Descargar PDF",
-                        data=archivo_pdf,
-                        file_name=nombre_pdf,
-                        mime="application/pdf"
-                    )
-
 
         if st.button(
             "📑 Exportar Orden Excel"
         ):
 
-            nombre_excel = f"Pedido_{int(orden['id']):04d}.xlsx"
+            nombre_excel = generar_excel_orden(
+                orden,
+                detalle_orden
+            )
 
-            if os.path.exists(nombre_excel):
+            with open(
+                nombre_excel,
+                "rb"
+            ) as archivo_excel:
 
-                st.warning(
-                    "⚠️ Este Excel ya fue generado previamente."
+                st.download_button(
+                    "📊 Descargar Excel",
+                    data=archivo_excel,
+                    file_name=nombre_excel,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-
-            else:
-
-                nombre_excel = generar_excel_orden(
-                    orden,
-                    detalle_orden
-                )
-
-
-                with open(
-                    nombre_excel,
-                    "rb"
-                ) as archivo_excel:
-
-                    st.download_button(
-                        "📊 Descargar Excel",
-                        data=archivo_excel,
-                        file_name=nombre_excel,
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
                       
                
         
