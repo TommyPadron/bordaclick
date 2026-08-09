@@ -55,8 +55,9 @@ from database import (
     guardar_color,
     obtener_colores,
     registrar_pago,
-    enviar_pdf_por_correo       
-)
+    enviar_pdf_por_correo
+)          
+
 
 
 st.set_page_config(
