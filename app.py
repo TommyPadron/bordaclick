@@ -48,8 +48,7 @@ from database import (
     obtener_tallas,
     guardar_color,
     obtener_colores,
-    registrar_pago,
-       
+    registrar_pago       
 )
 
 
