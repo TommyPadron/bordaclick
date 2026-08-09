@@ -47,7 +47,8 @@ from database import (
     guardar_talla,
     obtener_tallas,
     guardar_color,
-    obtener_colores
+    obtener_colores,
+    registrar_pago,
        
 )
 
@@ -993,6 +994,19 @@ if pagina == "Consultas":
         st.header(
             f"📋 Pedido #{int(orden['id']):04d}"
         )
+        
+        if orden["saldo_pendiente"] <= 0:
+
+            st.success(
+                "🟢 Estado de Pago: Pagado"
+            )
+
+        else:
+
+            st.warning(
+                "🔴 Estado de Pago: No Pagado"
+            )    
+            
         col1, col2 = st.columns(2)
 
         with col1:
@@ -1017,7 +1031,30 @@ if pagina == "Consultas":
                 estados,
                 index=indice_estado
             )
+            st.subheader(
+                "💰 Registrar Pago"
+            )
 
+            monto_pago = st.number_input(
+                "Monto del Pago",
+                min_value=0.0,
+                step=1.0
+            )
+
+            if st.button(
+                "💰 Registrar Pago"
+            ):
+
+                registrar_pago(
+                    int(orden["id"]),
+                    monto_pago
+                )
+
+                st.success(
+                    "✅ Pago registrado"
+                )
+
+                st.rerun()
 
         if st.button(
             "💾 Actualizar Estado"

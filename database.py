@@ -511,6 +511,56 @@ def obtener_detalle_orden(orden_id):
 
     return df
 
+def registrar_pago(
+    orden_id,
+    monto_pago
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            abono,
+            saldo_pendiente
+        FROM ordenes
+        WHERE id = ?
+    """,
+    (
+        orden_id,
+    ))
+
+    resultado = cursor.fetchone()
+
+    abono_actual = resultado[0]
+    saldo_actual = resultado[1]
+
+    nuevo_abono = abono_actual + monto_pago
+
+    nuevo_saldo = saldo_actual - monto_pago
+
+    if nuevo_saldo < 0:
+
+        nuevo_saldo = 0
+
+    cursor.execute("""
+        UPDATE ordenes
+        SET
+            abono = ?,
+            saldo_pendiente = ?
+        WHERE id = ?
+    """,
+    (
+        nuevo_abono,
+        nuevo_saldo,
+        orden_id
+    ))
+
+    conn.commit()
+
+    conn.close()
+
 def actualizar_status_orden(
     orden_id,
     status
