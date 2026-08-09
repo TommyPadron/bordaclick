@@ -198,16 +198,6 @@ if pagina == "Catálogo de Bordados":
         step=1.0
     )
 
-#    if st.button(
-#        "🗑️ Borrar Catálogos"
-#    ):
-#
-#        vaciar_catalogos()
-
-#        st.success(
-#            "✅ Catálogos eliminados"
-#        )
-
     if st.button("💾 Guardar Catálogo"):
 
         guardar_catalogo_bordados(
@@ -409,9 +399,8 @@ if pagina == "Catálogo de Bordados":
     st.dataframe(
         df_tipos_prenda,
         use_container_width=True
-    )        
-    
-    
+    )     
+  
     
 
     df_colegios = obtener_colegios()
@@ -1011,6 +1000,7 @@ if pagina == "Consultas":
             estados = [
                 "Recibido",
                 "En Producción",
+                "En Revisión del Cliente",
                 "Listo para Entrega",
                 "Entregado",
                 "Anulado"
@@ -1509,10 +1499,14 @@ if pagina == "Nueva Solicitud":
         "Saldo Pendiente",
         f"${saldo_pendiente:.2f}"
     )
-
+    if "solicitud_guardada" not in st.session_state:
+        st.session_state["solicitud_guardada"] = False
     if st.button(
         "Guardar Solicitud",
-        disabled=not cantidades_correctas
+        disabled=(
+            not cantidades_correctas
+            or st.session_state["solicitud_guardada"]
+        )
     ):
 
         status = "Recibido"        
@@ -1550,6 +1544,7 @@ if pagina == "Nueva Solicitud":
             )
 
         st.success("✅ Solicitud guardada correctamente")
+        st.session_state["solicitud_guardada"] = True
 
     
 
