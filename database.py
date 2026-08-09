@@ -916,6 +916,10 @@ Bordados Escolares Personalizados
     )
 
     mensaje.attach(parte)
+    
+    print("===== INICIO ENVIO EMAIL =====")
+    print("DESTINATARIO:", destinatario)
+    print("PDF:", pdf_path)
 
     servidor = smtplib.SMTP(
         "smtp.gmail.com",
