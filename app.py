@@ -1,6 +1,12 @@
 import streamlit as st
 import re
 import pandas as pd
+import smtplib
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from openpyxl.styles import Alignment
 from openpyxl.styles import PatternFill
 from openpyxl.styles import Font
@@ -48,7 +54,8 @@ from database import (
     obtener_tallas,
     guardar_color,
     obtener_colores,
-    registrar_pago       
+    registrar_pago,
+    enviar_pdf_por_correo       
 )
 
 
@@ -1087,7 +1094,17 @@ if pagina == "Consultas":
                 orden,
                 detalle_orden
             )
+            enviar_pdf_por_correo(
+                orden["correo"],
+                orden["nombre"],
+                int(orden["id"]),
+                orden["fecha_entrega"],
+                nombre_pdf
+            )
 
+            st.success(
+                "✅ Correo enviado"
+            )
             with open(
                 nombre_pdf,
                 "rb"

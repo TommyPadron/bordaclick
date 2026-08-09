@@ -1,6 +1,13 @@
 import sqlite3
 import pandas as pd
 
+import smtplib
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
 
 DATABASE = "bordaclick.db"
 
@@ -840,6 +847,106 @@ def obtener_colores():
     conn.close()
 
     return df
+
+def enviar_pdf_por_correo(
+    destinatario,
+    nombre_cliente,
+    orden_id,
+    fecha_entrega,
+    pdf_path
+):
+
+    remitente = "bordaclick@gmail.com"
+    password = "niiv nskd qzox xwnr"
+
+    mensaje = MIMEMultipart()
+
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+    mensaje["Subject"] = (
+        f"Bordaclick - Confirmación de Pedido #{orden_id:04d}"
+    )
+
+    cuerpo = f"""
+Hola {nombre_cliente},
+
+Gracias por confiar en Bordaclick.
+
+Hemos recibido correctamente tu solicitud de bordado.
+
+Adjunto encontrarás la Orden de Servicio correspondiente a tu pedido, donde podrás consultar los detalles de producción, cantidades, datos de entrega y resumen financiero.
+
+Número de Pedido: #{orden_id:04d}
+Fecha de Entrega: {fecha_entrega}
+
+Si necesitas realizar alguna consulta o modificación, puedes responder a este correo y con gusto te atenderemos.
+
+Gracias por elegir Bordaclick.
+
+Saludos,
+
+Equipo Bordaclick
+Bordados Escolares Personalizados
+"""
+
+    mensaje.attach(
+        MIMEText(
+            cuerpo,
+            "plain",
+            "utf-8"
+        )
+    )
+
+    with open(pdf_path, "rb") as archivo:
+
+        parte = MIMEBase(
+            "application",
+            "octet-stream"
+        )
+
+        parte.set_payload(
+            archivo.read()
+        )
+
+    encoders.encode_base64(parte)
+
+    parte.add_header(
+        "Content-Disposition",
+        f"attachment; filename={pdf_path}"
+    )
+
+    mensaje.attach(parte)
+
+    servidor = smtplib.SMTP(
+        "smtp.gmail.com",
+        587
+    )
+
+    servidor.starttls()
+
+    try:
+
+        servidor.login(
+            "bordaclick@gmail.com",
+            "niiv nskd qzox xwnr"
+        )
+
+        servidor.send_message(
+            mensaje
+        )
+
+        servidor.quit()
+
+        print(
+            "✅ Gmail confirmó el envío"
+        )
+
+    except Exception as e:
+
+        print(
+            f"❌ Error Gmail: {e}"
+        )
+
 
 
 
