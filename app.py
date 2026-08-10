@@ -1149,41 +1149,44 @@ if pagina == "Consultas":
                 )
 
                 st.rerun()
-        if st.button(
-            "💾 Actualizar Estado"
-        ):
+            if st.button(
+                "💾 Actualizar Estado"
+            ):
 
-            actualizar_status_orden(
-                int(orden["id"]),
-                estado
-            )
+                actualizar_status_orden(
+                    int(orden["id"]),
+                    estado
+                )
 
-            enviar_notificacion_estado(
-                orden["correo"],
-                orden["nombre"],
-                int(orden["id"]),
-                orden["fecha_entrega"],
-                estado
-            )
+                correo_cliente = str(
+                    orden["correo"]
+                ).strip()
 
-            st.success(
-                "✅ Estado actualizado"
-            )
+                if (
+                    correo_cliente
+                    and
+                    "@" in correo_cliente
+                ):
 
-        # if st.button(
-        #     "💾 Actualizar Estado"
-        # ):
+                    enviar_notificacion_estado(
+                        correo_cliente,
+                        orden["nombre"],
+                        int(orden["id"]),
+                        orden["fecha_entrega"],
+                        estado
+                    )
 
-        #     actualizar_status_orden(
-        #         int(orden["id"]),
-        #         estado
-        #     )
+                else:
 
-        #     st.success(
-        #         "✅ Estado actualizado"
-        #     )
+                    st.info(
+                        "ℹ️ Este cliente no tiene un correo válido. No se enviará notificación."
+                    )
 
+                st.success(
+                    "✅ Estado actualizado"
+                )
 
+   
         with col2:
 
             st.info(
