@@ -126,348 +126,273 @@ pagina = st.sidebar.selectbox(
 
 if pagina == "Catálogo de Bordados":
 
-    st.title("📋 Catálogo de Bordados")
+    st.title("🗂️ Administración de Catálogos")
 
-    df_catalogo = obtener_catalogo_bordados()
-
-    if df_catalogo.empty:
-
-            import pandas as pd
-
-            df_catalogo = pd.DataFrame({
-
-                "colegio": colegios,
-                "precio_bordado": 0.0
-
-            })
-
-    df_editado = st.data_editor(
-            df_catalogo,
-            use_container_width=True,
-            num_rows="fixed"
-        )
-
-    st.divider()
-
-    st.subheader(
-        "Configuración General"
-    )
-
-    precio_nombre = st.number_input(
-        "Precio Bordado de Nombre",
-        min_value=0.0,
-        value=float(
-            obtener_parametro(
-                "precio_nombre"
-            )
-        ),
-        step=0.50
-    )
-
-    dias_produccion = st.number_input(
-        "Días de Producción",
-        min_value=1,
-        value=int(
-            obtener_parametro(
-                "dias_produccion"
-            ) or 3
-        ),
-        step=1
-    )
-
-    delivery_chacao = st.number_input(
-        "Precio Delivery Chacao",
-        min_value=0.0,
-        value=float(
-            obtener_parametro(
-                "delivery_chacao"
-            )
-        ),
-        step=1.0
-    )
-
-    delivery_baruta = st.number_input(
-        "Precio Delivery Baruta",
-        min_value=0.0,
-        value=float(
-            obtener_parametro(
-                "delivery_baruta"
-            )
-        ),
-        step=1.0
-    )
-
-    delivery_sucre = st.number_input(
-        "Precio Delivery Sucre",
-        min_value=0.0,
-        value=float(
-            obtener_parametro(
-                "delivery_sucre"
-            )
-        ),
-        step=1.0
-    )
-
-    delivery_libertador = st.number_input(
-        "Precio Delivery Libertador",
-        min_value=0.0,
-        value=float(
-            obtener_parametro(
-                "delivery_libertador"
-            )
-        ),
-        step=1.0
-    )
-
-    if st.button("💾 Guardar Catálogo"):
-
-        guardar_catalogo_bordados(
-            df_editado
-        )
-
-        guardar_parametro(
-            "precio_nombre",
-            precio_nombre
-        )
-
-        guardar_parametro(
-            "dias_produccion",
-            dias_produccion
-        )
-
-        guardar_parametro(
-            "delivery_chacao",
-            delivery_chacao
-        )
-
-        guardar_parametro(
-            "delivery_baruta",
-            delivery_baruta
-        )
-
-        guardar_parametro(
-            "delivery_sucre",
-            delivery_sucre
-        )
-
-        guardar_parametro(
-            "delivery_libertador",
-            delivery_libertador
-        )
-
-        st.success(
-            "✅ Catálogo actualizado"
-            )
-
-    st.divider()
-
-    st.subheader(
-        "📚 Agregar Colegio"
-    )
-
-    nombre_colegio = st.text_input(
-        "Nombre del Colegio"
-    )
-
-    precio_colegio = st.number_input(
-        "Precio Bordado Colegio",
-        min_value=0.0,
-        step=0.50
-    )
-
-    if st.button(
-        "💾 Guardar Colegio"
-    ):
-
-        guardar_colegio(
-            nombre_colegio,
-            precio_colegio
-        )
-
-        st.success(
-            "✅ Colegio guardado"
-        )
-        
-    st.subheader(
-        "📚 Colegios Registrados"
-    )
-    st.divider()
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        "⚙️ Configuración",
+        "🏫 Colegios",
+        "🚚 Delivery",
+        "📦 Prendas",
+        "🏷️ Marcas",
+        "📏 Tallas",
+        "🎨 Colores"
+    ])
     
-    st.subheader(
-        "🚚 Agregar Zona Delivery"
-    )
+    with tab1:
 
-    nombre_zona = st.text_input(
-        "Nombre de la Zona"
-    )
-
-    costo_zona = st.number_input(
-        "Costo Delivery",
-        min_value=0.0,
-        step=1.0
-    )
-
-    if st.button(
-        "💾 Guardar Zona Delivery"
-    ):
-
-        guardar_zona_delivery(
-            nombre_zona,
-            costo_zona
-        )
-
-        st.success(
-            "✅ Zona Delivery guardada"
-        )
-
-    df_zonas = obtener_zonas_delivery()
-
-    st.subheader(
-        "🚚 Zonas Delivery Registradas"
-    )
-
-    st.dataframe(
-        df_zonas,
-        use_container_width=True
-    )
-
-    st.subheader(
-        "📦 Agregar Tipo de Prenda"
-    )
-
-    nombre_tipo_prenda = st.text_input(
-        "Nombre del Tipo de Prenda"
-    )
-
-    if st.button(
-        "💾 Guardar Tipo de Prenda"
-    ):
-
-        guardar_tipo_prenda(
-            nombre_tipo_prenda
-        )
-
-        st.success(
-            "✅ Tipo de Prenda guardado"
-        )
-    st.subheader(
-        "📦 Tipos de Prenda Registrados"
-    )
-    st.divider()
-
-    st.subheader(
-        "🏷️ Agregar Marca"
-    )
-
-    nombre_marca = st.text_input(
-        "Nombre de la Marca"
-    )
-
-    if st.button(
-        "💾 Guardar Marca"
-    ):
-
-        guardar_marca(
-            nombre_marca
-        )
-
-        st.success(
-            "✅ Marca guardada"
-        )
-        
         st.subheader(
-        "🏷️ Marcas Registradas"
-    )
-        
-    st.divider()
-
-    st.subheader(
-        "📏 Agregar Talla"
-    )
-
-    nombre_talla = st.text_input(
-        "Nombre de la Talla"
-    )
-
-    if st.button(
-        "💾 Guardar Talla"
-    ):
-
-        guardar_talla(
-            nombre_talla
+            "⚙️ Configuración General"
         )
 
-        st.success(
-            "✅ Talla guardada"
-        )
-        
-    st.subheader(
-    "📏 Tallas Registradas"
-        )
-
-    df_tallas = obtener_tallas()
-
-    st.dataframe(
-        df_tallas,
-        use_container_width=True
-    )
-
-    st.divider()
-
-    st.subheader(
-        "🎨 Agregar Color"
-    )
-
-    nombre_color = st.text_input(
-        "Nombre del Color"
-    )
-
-    if st.button(
-        "💾 Guardar Color"
-    ):
-
-        guardar_color(
-            nombre_color
+        precio_nombre = st.number_input(
+            "Precio Bordado de Nombre",
+            min_value=0.0,
+            value=float(
+                obtener_parametro(
+                    "precio_nombre"
+                )
+            ),
+            step=0.50
         )
 
-        st.success(
-            "✅ Color guardado"
+        dias_produccion = st.number_input(
+            "Días de Producción",
+            min_value=1,
+            value=int(
+                obtener_parametro(
+                    "dias_produccion"
+                ) or 3
+            ),
+            step=1
         )
 
-    st.subheader(
-        "🎨 Colores Registrados"
-    ) 
+        if st.button(
+            "💾 Guardar Configuración"
+        ):
 
-    df_colores = obtener_colores()
+            guardar_parametro(
+                "precio_nombre",
+                precio_nombre
+            )
 
-    st.dataframe(
-        df_colores,
-        use_container_width=True
-    )
-            
+            guardar_parametro(
+                "dias_produccion",
+                dias_produccion
+            )
 
-    df_marcas = obtener_marcas()
-
-    st.dataframe(
-        df_marcas,
-        use_container_width=True
-    )
-
-    df_tipos_prenda = obtener_tipos_prenda()
-
-    st.dataframe(
-        df_tipos_prenda,
-        use_container_width=True
-    )     
-  
+            st.success(
+                "✅ Configuración actualizada"
+            )    
     
 
-    df_colegios = obtener_colegios()
+    with tab2:
 
-    st.dataframe(
-        df_colegios,
-        use_container_width=True
-    )                
+        st.subheader(
+            "📚 Agregar Colegio"
+        )
+        df_colegios = obtener_colegios()
+
+        nombre_colegio = st.text_input(
+            "Nombre del Colegio"
+        )
+        precio_colegio = st.number_input(
+            "Precio Bordado Colegio",
+            min_value=0.0,
+            step=0.50
+        )
+
+        if st.button(
+            "💾 Guardar Colegio"
+        ):
+
+            guardar_colegio(
+                nombre_colegio,
+                precio_colegio
+            )
+
+            st.success(
+                "✅ Colegio guardado"
+            )
+
+        st.subheader(
+            "📚 Colegios Registrados"
+        )
+        st.dataframe(
+            df_colegios,
+            use_container_width=True
+        )        
+
+    with tab3:
+
+        st.subheader(
+            "🚚 Agregar Zona Delivery"
+        )
+
+        nombre_zona = st.text_input(
+            "Nombre de la Zona"
+        )
+
+        costo_zona = st.number_input(
+            "Costo Delivery",
+            min_value=0.0,
+            step=1.0
+        )
+
+        if st.button(
+            "💾 Guardar Zona Delivery"
+        ):
+
+            guardar_zona_delivery(
+                nombre_zona,
+                costo_zona
+            )
+
+            st.success(
+                "✅ Zona Delivery guardada"
+            )
+
+        df_zonas = obtener_zonas_delivery()
+
+        st.subheader(
+            "🚚 Zonas Delivery Registradas"
+        )
+        st.dataframe(
+            df_zonas,
+            use_container_width=True
+        )
+
+    with tab4:
+
+        st.subheader(
+            "📦 Agregar Tipo de Prenda"
+        )
+
+        nombre_tipo_prenda = st.text_input(
+            "Nombre del Tipo de Prenda"
+        )
+
+        if st.button(
+            "💾 Guardar Tipo de Prenda"
+        ):
+
+            guardar_tipo_prenda(
+                nombre_tipo_prenda
+            )
+
+            st.success(
+                "✅ Tipo de Prenda guardado"
+            )
+
+        st.subheader(
+            "📦 Tipos de Prenda Registrados"
+        )
+        df_tipos_prenda = obtener_tipos_prenda()
+
+        st.dataframe(
+            df_tipos_prenda,
+            use_container_width=True
+        )        
+        st.divider()
+    with tab5:
+
+        st.subheader(
+            "🏷️ Agregar Marca"
+        )
+
+        nombre_marca = st.text_input(
+            "Nombre de la Marca"
+        )
+
+        if st.button(
+            "💾 Guardar Marca"
+        ):
+
+            guardar_marca(
+                nombre_marca
+            )
+
+            st.success(
+                "✅ Marca guardada"
+            )
+
+        st.subheader(
+            "🏷️ Marcas Registradas"
+        )
+        df_marcas = obtener_marcas()
+
+        st.dataframe(
+            df_marcas,
+            use_container_width=True
+        )
+        st.divider()
+
+    with tab6:
+
+        st.subheader(
+            "📏 Agregar Talla"
+        )
+
+        nombre_talla = st.text_input(
+            "Nombre de la Talla"
+        )
+
+        if st.button(
+            "💾 Guardar Talla"
+        ):
+
+            guardar_talla(
+                nombre_talla
+            )
+
+            st.success(
+                "✅ Talla guardada"
+            )
+
+        st.subheader(
+            "📏 Tallas Registradas"
+        )
+
+        df_tallas = obtener_tallas()
+
+        st.dataframe(
+            df_tallas,
+            use_container_width=True
+        )
+
+        st.divider()
+
+    with tab7:
+
+        st.subheader(
+            "🎨 Agregar Color"
+        )
+
+        nombre_color = st.text_input(
+            "Nombre del Color"
+        )
+
+        if st.button(
+            "💾 Guardar Color"
+        ):
+
+            guardar_color(
+                nombre_color
+            )
+
+            st.success(
+                "✅ Color guardado"
+            )
+
+        st.subheader(
+            "🎨 Colores Registrados"
+        )
+
+        df_colores = obtener_colores()
+
+        st.dataframe(
+            df_colores,
+            use_container_width=True
+        )             
         
 def generar_pdf_orden(
     orden,
