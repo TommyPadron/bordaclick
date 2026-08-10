@@ -22,7 +22,8 @@ from reportlab.platypus import (
     Spacer,
     PageBreak,
     Table,
-    TableStyle
+    TableStyle,
+    Image
 )
 from reportlab.lib.styles import getSampleStyleSheet
 import os
@@ -70,6 +71,12 @@ st.set_page_config(
 )
 
 crear_bd()
+
+st.image(
+
+    "Logo Bordaclick.JPG",
+    width=250
+)
 
 colegios = [
     "San Ignacio",
@@ -472,45 +479,66 @@ def generar_pdf_orden(
 
     elementos = []
 
-    titulo = Table(
-        [
-            ["BORDACLICK"],
-            ["ORDEN DE SERVICIO"]
-        ],
-        colWidths=[300]
-    )
-
-    titulo.setStyle(
-        TableStyle([
-
-            ("BACKGROUND", (0, 0), (-1, 0), colors.darkblue),
-
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-
-            ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
-
-            ("FONTSIZE", (0, 0), (-1, 0), 18),
-
-            ("FONTSIZE", (0, 1), (-1, 1), 12),
-
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-
-            ("TOPPADDING", (0, 0), (-1, 0), 8),
-
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-
-            ("GRID", (0, 0), (-1, -1), 1, colors.black)
-
-        ])
+    logo = Image(
+        "Logo Bordaclick.JPG",
+        width=150,
+        height=80
     )
 
     elementos.append(
-        titulo
+        logo
     )
+
+    elementos.append(
+        Spacer(1, 10)
+    )
+
+    elementos.append(
+        Paragraph(
+            "ORDEN DE SERVICIO",
+            estilos["Heading1"]
+        )
+    )
+
+    # titulo = Table(
+    #     [
+    #         ["BORDACLICK"],
+    #         ["ORDEN DE SERVICIO"]
+    #     ],
+    #     colWidths=[300]
+    # )
+
+    # titulo.setStyle(
+    #     TableStyle([
+
+    #         ("BACKGROUND", (0, 0), (-1, 0), colors.darkblue),
+
+    #         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+
+    #         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+
+    #         ("FONTNAME", (0, 1), (-1, 1), "Helvetica-Bold"),
+
+    #         ("FONTSIZE", (0, 0), (-1, 0), 18),
+
+    #         ("FONTSIZE", (0, 1), (-1, 1), 12),
+
+    #         ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+
+    #         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+
+    #         ("TOPPADDING", (0, 0), (-1, 0), 8),
+
+    #         ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+
+    #         ("GRID", (0, 0), (-1, -1), 1, colors.black)
+
+    #     ])
+    # )
+
+    # elementos.append(
+    #     titulo
+    # )
 
     elementos.append(
         Spacer(1, 10)
@@ -523,7 +551,7 @@ def generar_pdf_orden(
     elementos.append(
         Paragraph(
             f"Pedido #{int(orden['id']):04d}",
-            estilos["Heading2"]
+            estilos["Heading3"]
         )
     )
 
@@ -566,7 +594,7 @@ def generar_pdf_orden(
     elementos.append(
         Paragraph(
             "DATOS DEL CLIENTE",
-            estilos["Heading2"]
+            estilos["Heading3"]
         )
     )
 
@@ -609,7 +637,7 @@ def generar_pdf_orden(
     elementos.append(
         Paragraph(
             "DATOS DE PRODUCCION",
-            estilos["Heading2"]
+            estilos["Heading3"]
         )
     )
   
@@ -652,7 +680,7 @@ def generar_pdf_orden(
     elementos.append(
         Paragraph(
             "RESUMEN FINANCIERO",
-            estilos["Heading2"]
+            estilos["Heading3"]
         )
     )
 
@@ -714,7 +742,7 @@ def generar_pdf_orden(
     elementos.append(
         Paragraph(
             "DESGLOSE DE PRENDAS",
-            estilos["Heading2"]
+            estilos["Heading3"]
         )
     )
 
@@ -772,21 +800,31 @@ def generar_pdf_orden(
 
     elementos.append(
         Paragraph(
-            "BORDACLICK",
+            "Bordaclick Diseños",
             estilos["Heading3"]
         )
     )
 
     elementos.append(
         Paragraph(
-            "Documento generado automáticamente",
+            "Sistema de Gestión de Bordados Escolares",
             estilos["Normal"]
         )
-    )    
-    
+    )
+
     doc.build(elementos)
 
     return nombre_pdf
+    # elementos.append(
+    #     Paragraph(
+    #         "Documento generado automáticamente",
+    #         estilos["Normal"]
+    #     )
+    # )    
+    
+    # doc.build(elementos)
+
+    # return nombre_pdf
 
 def generar_excel_orden(
     orden,
