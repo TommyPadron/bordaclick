@@ -1116,7 +1116,23 @@ Sistema de Gestión de Bordados Escolares
 
     servidor.quit()
 
+def contar_pedidos_pendientes():
 
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM ordenes
+        WHERE status = 'Recibido'
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conn.close()
+
+    return total
 
     
 

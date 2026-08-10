@@ -60,7 +60,8 @@ from database import (
     guardar_zona_delivery,
     obtener_zonas_delivery,
     obtener_costo_delivery,
-    enviar_notificacion_estado
+    enviar_notificacion_estado,
+    contar_pedidos_pendientes,
 )          
 
 
@@ -78,6 +79,7 @@ st.image(
     "Logo Bordaclick.JPG",
     width=250
 )
+
 
 colegios = [
     "San Ignacio",
@@ -990,6 +992,20 @@ if pagina == "Consultas":
     st.title(
         "📋 Consulta de Órdenes"
     )
+
+    pendientes = contar_pedidos_pendientes()
+
+    if pendientes > 0:
+
+        st.warning(
+            f"🔔 Tienes {pendientes} pedidos nuevos por revisar"
+        )
+
+    else:
+
+        st.success(
+            "✅ No hay pedidos nuevos pendientes"
+        )
 
     df_ordenes = obtener_ordenes()
 
