@@ -59,7 +59,8 @@ from database import (
     enviar_pdf_por_correo,
     guardar_zona_delivery,
     obtener_zonas_delivery,
-    obtener_costo_delivery
+    obtener_costo_delivery,
+    enviar_notificacion_estado
 )          
 
 
@@ -815,16 +816,7 @@ def generar_pdf_orden(
     doc.build(elementos)
 
     return nombre_pdf
-    # elementos.append(
-    #     Paragraph(
-    #         "Documento generado automáticamente",
-    #         estilos["Normal"]
-    #     )
-    # )    
-    
-    # doc.build(elementos)
 
-    # return nombre_pdf
 
 def generar_excel_orden(
     orden,
@@ -1141,7 +1133,6 @@ if pagina == "Consultas":
                 )
 
                 st.rerun()
-
         if st.button(
             "💾 Actualizar Estado"
         ):
@@ -1151,9 +1142,30 @@ if pagina == "Consultas":
                 estado
             )
 
+            enviar_notificacion_estado(
+                orden["correo"],
+                orden["nombre"],
+                int(orden["id"]),
+                orden["fecha_entrega"],
+                estado
+            )
+
             st.success(
                 "✅ Estado actualizado"
             )
+
+        # if st.button(
+        #     "💾 Actualizar Estado"
+        # ):
+
+        #     actualizar_status_orden(
+        #         int(orden["id"]),
+        #         estado
+        #     )
+
+        #     st.success(
+        #         "✅ Estado actualizado"
+        #     )
 
 
         with col2:

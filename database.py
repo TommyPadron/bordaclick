@@ -1032,6 +1032,90 @@ def obtener_costo_delivery(
 
     return 0
 
+def enviar_notificacion_estado(
+    destinatario,
+    nombre_cliente,
+    orden_id,
+    fecha_entrega,
+    estado
+):
+
+    remitente = "bordaclick@gmail.com"
+    password = "niiv nskd qzox xwnr"
+
+    mensaje = MIMEMultipart()
+
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+
+    if estado == "En Producción":
+
+        mensaje["Subject"] = (
+            f"Bordaclick - Tu pedido #{orden_id:04d} está en producción"
+        )
+
+        cuerpo = f"""
+Hola {nombre_cliente},
+
+Queremos informarte que tu pedido #{orden_id:04d} ya se encuentra en proceso de producción.
+
+Fecha estimada de entrega:
+{fecha_entrega}
+
+Gracias por confiar en Bordaclick.
+
+Bordaclick Diseños
+Sistema de Gestión de Bordados Escolares
+"""
+
+    elif estado == "Listo para Entrega":
+
+        mensaje["Subject"] = (
+            f"Bordaclick - Tu pedido #{orden_id:04d} está listo para ser retirado"
+        )
+
+        cuerpo = f"""
+Hola {nombre_cliente},
+
+Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
+
+Puedes comunicarte con nosotros para coordinar el retiro o la entrega de tu pedido.
+
+Gracias por confiar en Bordaclick.
+
+Bordaclick Diseños
+Sistema de Gestión de Bordados Escolares
+"""
+
+    else:
+        return
+
+    mensaje.attach(
+        MIMEText(
+            cuerpo,
+            "plain",
+            "utf-8"
+        )
+    )
+
+    servidor = smtplib.SMTP(
+        "smtp.gmail.com",
+        587
+    )
+
+    servidor.starttls()
+
+    servidor.login(
+        remitente,
+        password
+    )
+
+    servidor.send_message(
+        mensaje
+    )
+
+    servidor.quit()
+
 
 
     
