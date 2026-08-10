@@ -1260,15 +1260,12 @@ if pagina == "Nueva Solicitud":
         if not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', correo):
             st.error("Correo electrónico inválido.")
 
-    df_colegios = obtener_colegios()
-
-    lista_colegios = (
-        df_colegios["nombre"].dropna().tolist()
-    )
     
     df_colegios = obtener_colegios()
 
     lista_colegios = (
+        ["Seleccione un colegio..."]
+        +
         df_colegios["nombre"]
         .dropna()
         .tolist()
@@ -1489,6 +1486,7 @@ if pagina == "Nueva Solicitud":
         zona_delivery = st.selectbox(
             "Zona de entrega",
             [
+                "Seleccione zona de delivery...",
                 "Chacao / Altamira / Los Palos Grandes",
                 "Baruta / El Cafetal / Las Mercedes",
                 "Sucre / Petare / La California",
@@ -1562,6 +1560,24 @@ if pagina == "Nueva Solicitud":
             or st.session_state["solicitud_guardada"]
         )
     ):
+        if colegio == "Seleccione un colegio...":
+
+            st.error(
+                "Debe seleccionar un colegio"
+            )
+
+            st.stop()
+        if (
+            delivery == "Sí (con costo adicional)"
+            and
+            zona_delivery == "Seleccione zona de delivery..."
+        ):
+
+            st.error(
+                "Debe seleccionar una zona de delivery"
+            )
+
+            st.stop()
 
         status = "Recibido"        
 
