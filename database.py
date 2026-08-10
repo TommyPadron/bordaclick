@@ -1,6 +1,5 @@
 import sqlite3
 import pandas as pd
-
 import smtplib
 
 from email.mime.multipart import MIMEMultipart
@@ -162,6 +161,12 @@ def crear_bd():
 
     )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS zonas_delivery (
+            nombre TEXT PRIMARY KEY,
+            costo REAL
+        )
+    """)    
 
     conn.commit()
 
@@ -451,6 +456,54 @@ def guardar_colegio(
 
     conn.close()
 
+def guardar_zona_delivery(
+    nombre,
+    costo
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO zonas_delivery (
+            nombre,
+            costo
+        )
+        VALUES (?, ?)
+    """,
+    (
+        nombre,
+        costo
+    ))
+
+    conn.commit()
+
+    conn.close()
+    
+
+    
+def obtener_zonas_delivery():
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = """
+    SELECT
+        nombre,
+        costo
+    FROM zonas_delivery
+    ORDER BY nombre
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df    
+
 def obtener_ordenes():
 
     conn = sqlite3.connect(DATABASE)
@@ -476,6 +529,7 @@ def obtener_ordenes():
 
     return df
 
+
 def obtener_orden_por_id(orden_id):
 
     conn = sqlite3.connect(DATABASE)
@@ -494,6 +548,7 @@ def obtener_orden_por_id(orden_id):
     conn.close()
 
     return df
+
 def obtener_detalle_orden(orden_id):
 
     conn = sqlite3.connect(DATABASE)
@@ -950,7 +1005,32 @@ Bordados Escolares Personalizados
         print(
             f"❌ Error Gmail: {e}"
         )
+def obtener_costo_delivery(
+    nombre
+):
 
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT costo
+        FROM zonas_delivery
+        WHERE nombre = ?
+    """,
+    (
+        nombre,
+    ))
+
+    resultado = cursor.fetchone()
+
+    conn.close()
+
+    if resultado:
+
+        return resultado[0]
+
+    return 0
 
 
 

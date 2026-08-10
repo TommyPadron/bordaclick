@@ -55,7 +55,10 @@ from database import (
     guardar_color,
     obtener_colores,
     registrar_pago,
-    enviar_pdf_por_correo
+    enviar_pdf_por_correo,
+    guardar_zona_delivery,
+    obtener_zonas_delivery,
+    obtener_costo_delivery
 )          
 
 
@@ -279,6 +282,44 @@ if pagina == "Catálogo de Bordados":
         "📚 Colegios Registrados"
     )
     st.divider()
+    
+    st.subheader(
+        "🚚 Agregar Zona Delivery"
+    )
+
+    nombre_zona = st.text_input(
+        "Nombre de la Zona"
+    )
+
+    costo_zona = st.number_input(
+        "Costo Delivery",
+        min_value=0.0,
+        step=1.0
+    )
+
+    if st.button(
+        "💾 Guardar Zona Delivery"
+    ):
+
+        guardar_zona_delivery(
+            nombre_zona,
+            costo_zona
+        )
+
+        st.success(
+            "✅ Zona Delivery guardada"
+        )
+
+    df_zonas = obtener_zonas_delivery()
+
+    st.subheader(
+        "🚚 Zonas Delivery Registradas"
+    )
+
+    st.dataframe(
+        df_zonas,
+        use_container_width=True
+    )
 
     st.subheader(
         "📦 Agregar Tipo de Prenda"
@@ -1480,55 +1521,44 @@ if pagina == "Nueva Solicitud":
     )
 
     zona_delivery = ""
-
-    if delivery == "Sí (con costo adicional)":
-
-        zona_delivery = st.selectbox(
-            "Zona de entrega",
-            [
-                "Seleccione zona de delivery...",
-                "Chacao / Altamira / Los Palos Grandes",
-                "Baruta / El Cafetal / Las Mercedes",
-                "Sucre / Petare / La California",
-                "Centro / Libertador"
-            ]
-        )
-
     delivery_costo = 0
 
     if delivery == "Sí (con costo adicional)":
 
-        if zona_delivery == "Chacao / Altamira / Los Palos Grandes":
+        df_zonas = obtener_zonas_delivery()
 
-            delivery_costo = obtener_parametro(
-                "delivery_chacao"
-            )
-
-        elif zona_delivery == "Baruta / El Cafetal / Las Mercedes":
-
-            delivery_costo = obtener_parametro(
-                "delivery_baruta"
-            )
-
-        elif zona_delivery == "Sucre / Petare / La California":
-
-            delivery_costo = obtener_parametro(
-                "delivery_sucre"
-            )
-
-        elif zona_delivery == "Centro / Libertador":
-
-            delivery_costo = obtener_parametro(
-                "delivery_libertador"
-            )
-
-        st.info(
-            f"🚚 Costo Delivery: ${delivery_costo:.2f}"
+        lista_zonas = (
+            ["Seleccione zona de delivery..."]
+            +
+            df_zonas["nombre"]
+            .dropna()
+            .tolist()
         )
-    st.metric(
-    "Subtotal Delivery",
-    f"${delivery_costo:.2f}"
-    )        
+
+        zona_delivery = st.selectbox(
+            "Zona de entrega",
+            lista_zonas
+        )
+
+        if zona_delivery != "Seleccione zona de delivery...":
+
+            delivery_costo = obtener_costo_delivery(
+                zona_delivery
+            )
+
+            st.info(
+                f"🚚 Costo Delivery: ${delivery_costo:.2f}"
+            )
+
+        st.metric(
+            "Subtotal Delivery",
+            f"${delivery_costo:.2f}"
+        )
+
+    else:
+
+        zona_delivery = ""
+        delivery_costo = 0      
 
     st.header("Información de Pago")
 
