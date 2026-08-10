@@ -1319,6 +1319,16 @@ if pagina == "Nueva Solicitud":
     precio_bordado = obtener_precio_colegio(
         colegio
     )
+    
+    # if cantidad_total >= 6:
+
+    #     precio_bordado = (
+    #         precio_bordado - 0.50
+    #     )
+
+    #     st.success(
+    #         "🎉 Promoción aplicada: -$0.50 por bordado por cantidad (6 o más prendas)"
+    #     )    
 
     st.info(
         f"💰 Precio del bordado: ${precio_bordado:.2f}"
@@ -1426,6 +1436,23 @@ if pagina == "Nueva Solicitud":
             suma_prendas = df["Cantidad"].fillna(0).sum()
 
     cantidad_total = int(suma_prendas)
+    
+
+    if cantidad_total >= 6:
+
+        precio_bordado = max(
+            0,
+            precio_bordado - 0.50
+        )
+
+        st.success(
+            "🎉 Promoción aplicada: -$0.50 por bordado por cantidad (6 o más prendas)"
+        )
+
+    subtotal_bordado = (
+        cantidad_total *
+        precio_bordado
+    )
 
     subtotal_bordado = (
         cantidad_total *
