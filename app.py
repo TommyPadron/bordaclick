@@ -128,14 +128,15 @@ if pagina == "Catálogo de Bordados":
 
     st.title("🗂️ Administración de Catálogos")
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
         "⚙️ Configuración",
         "🏫 Colegios",
         "🚚 Delivery",
         "📦 Prendas",
         "🏷️ Marcas",
         "📏 Tallas",
-        "🎨 Colores"
+        "🎨 Colores",
+        "💾 Respaldo"
     ])
     
     with tab1:
@@ -392,7 +393,29 @@ if pagina == "Catálogo de Bordados":
         st.dataframe(
             df_colores,
             use_container_width=True
-        )             
+        )
+                     
+    with tab8:
+
+        st.subheader(
+            "💾 Respaldo Base de Datos"
+        )
+
+        st.info(
+            "Descarga una copia completa de la base de datos actual de Bordaclick."
+        )
+
+        with open(
+            "bordaclick.db",
+            "rb"
+        ) as archivo:
+
+            st.download_button(
+                label="📥 Descargar Base de Datos",
+                data=archivo,
+                file_name="bordaclick_backup.db",
+                mime="application/octet-stream"
+            )
         
 def generar_pdf_orden(
     orden,
