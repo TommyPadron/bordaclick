@@ -1026,39 +1026,7 @@ if pagina == "Consultas":
     st.write(
         f"Pedido seleccionado: #{pedido_id:04d}"
     )
-if st.button(
-    "✏️ Editar Pedido"
-):
 
-    st.session_state["modo_edicion"] = True
-
-    if st.session_state.get(
-        "modo_edicion",
-        False
-    ):
-
-        pedido = obtener_orden_por_id(
-            pedido_id
-        )
-
-        st.success(
-            f"✅ Editando Pedido #{pedido_id:04d}"
-        )
-
-        nombre_edit = st.text_input(
-            "Nombre",
-            value=pedido["nombre"]
-        )
-
-        telefono_edit = st.text_input(
-            "Teléfono",
-            value=pedido["telefono"]
-        )
-
-        correo_edit = st.text_input(
-            "Correo",
-            value=pedido["correo"]
-        )
     if st.button(
         "✏️ Editar Pedido"
     ):
