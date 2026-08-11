@@ -851,11 +851,11 @@ def generar_excel_orden(
 
     for _, fila in detalle_orden.iterrows():
 
-        ws[f"A{fila_excel}"] = fila["tipo_prenda"]
-        ws[f"B{fila_excel}"] = fila["talla"]
-        ws[f"C{fila_excel}"] = fila["marca"]
-        ws[f"D{fila_excel}"] = fila["color"]
-        ws[f"E{fila_excel}"] = fila["cantidad"]
+        ws[f"A{fila_excel}"] = fila["Tipo_Prenda"]
+        ws[f"B{fila_excel}"] = fila["Talla"]
+        ws[f"C{fila_excel}"] = fila["Marca"]
+        ws[f"D{fila_excel}"] = fila["Color"]
+        ws[f"E{fila_excel}"] = fila["Cantidad"]
 
         fila_excel += 1
     encabezado_tabla = Font(
