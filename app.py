@@ -1649,13 +1649,21 @@ if pagina == "Nueva Solicitud":
                 "telefono": telefono,
                 "correo": correo,
                 "colegio": colegio,
+                "tipo_logo": logo,
+                "cantidad_total": cantidad_total,
+                "nombre_bordado": nombre_bordado,
+                "cantidad_nombre": cantidad_nombre,
                 "delivery": delivery,
                 "zona_delivery": zona_delivery,
                 "fecha_entrega": fecha_entrega,
                 "status": status,
+                "precio_bordado": precio_bordado,
+                "subtotal_bordado": subtotal_bordado,
+                "subtotal_nombres": subtotal_nombres,
+                "delivery_costo": delivery_costo,
                 "saldo_pendiente": saldo_pendiente,
                 "abono": abono
-            }
+            }            
 
             detalle_orden = df
 
