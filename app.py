@@ -133,6 +133,14 @@ if pagina == "📊 Reportes":
 
     df = obtener_ordenes()
 
+    df_anulados = df[
+        df["status"] == "Anulado"
+    ]
+
+    df = df[
+        df["status"] != "Anulado"
+    ]
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -160,7 +168,7 @@ if pagina == "📊 Reportes":
             )
         )
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
 
@@ -182,7 +190,15 @@ if pagina == "📊 Reportes":
                     df["status"] == "Listo para Entrega"
                 ]
             )
-        )  
+        )
+
+    with col3:
+
+        st.metric(
+            "❌ Anulados",
+            len(df_anulados)
+        )
+
 
 if pagina == "Catálogo de Bordados":
 
