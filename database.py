@@ -1073,7 +1073,8 @@ Sistema de Gestión de Bordados Escolares
 
     elif estado == "Listo para Entrega":
 
-        if delivery == "Sí":
+        if "Sí" in str(delivery):
+        # if delivery == "Sí":
 
             mensaje["Subject"] = (
                 f"Bordaclick - Tu pedido #{orden_id:04d} está listo para entrega"
