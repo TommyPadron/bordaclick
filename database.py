@@ -568,7 +568,13 @@ def obtener_detalle_orden(orden_id):
         query,
         conn
     )
-
+    df.columns = [
+        "Tipo Prenda",
+        "Talla",
+        "Marca",
+        "Color",
+        "Cantidad"
+    ]
     conn.close()
 
     return df
