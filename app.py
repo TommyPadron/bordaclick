@@ -1673,7 +1673,10 @@ if pagina == "Nueva Solicitud":
             }            
 
             detalle_orden = df
-
+            st.write(
+                "COLUMNAS DF:",
+                detalle_orden.columns.tolist()
+            )
             nombre_pdf = generar_pdf_orden(
                 orden,
                 detalle_orden
