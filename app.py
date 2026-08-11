@@ -1608,12 +1608,6 @@ if pagina == "Nueva Solicitud":
     st.header("Información de Pago")
 
     abono = 0.0
-#  abono = st.number_input(
-#       "Abono recibido ($)",
-#       min_value=0.0,
-#       value=0.0,
-#       step=1.0
-#   )
 
     saldo_pendiente = (
         subtotal_bordado +
@@ -1628,6 +1622,7 @@ if pagina == "Nueva Solicitud":
     )
     if "solicitud_guardada" not in st.session_state:
         st.session_state["solicitud_guardada"] = False
+        
     if st.button(
         "Guardar Solicitud",
         disabled=(
@@ -1687,7 +1682,28 @@ if pagina == "Nueva Solicitud":
                 fila["Color"],
                 int(fila["Cantidad"])
             )
+        if correo and "@" in correo:
 
+            orden = {
+                "id": orden_id,
+                "nombre": nombre,
+                "fecha_entrega": fecha_entrega
+            }
+
+            detalle_orden = df
+
+            nombre_pdf = generar_pdf_orden(
+                orden,
+                detalle_orden
+            )
+
+            enviar_pdf_por_correo(
+                correo,
+                nombre,
+                orden_id,
+                fecha_entrega,
+                nombre_pdf
+            )
         st.success("✅ Solicitud guardada correctamente")
         st.session_state["solicitud_guardada"] = True
 
