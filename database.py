@@ -1005,25 +1005,7 @@ Bordados Escolares Personalizados
         )
 
         raise
-    # try:
 
-    #     servidor.login(
-    #         "bordaclick@gmail.com",
-    #         "niiv nskd qzox xwnr"
-    #     )
-
-    #     servidor.send_message(
-    #         mensaje
-    #     )
-
-    #     servidor.quit()
-
-    #     raise Exception("PRUEBA: CORREO ENVIADO")
-    # except Exception as e:
-
-    #     raise Exception(
-    #         f"❌ Error Gmail: {e}"
-    #     )
 
 def obtener_costo_delivery(
     nombre
