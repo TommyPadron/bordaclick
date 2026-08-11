@@ -930,15 +930,19 @@ if pagina == "Consultas":
             return ["background-color: #d1e7dd"] * len(fila)
 
         return [""] * len(fila)
-
+    
     st.dataframe(
-        df_ordenes.style.apply(
+        df_ordenes.style
+        .format({
+            "saldo_pendiente": "${:.2f}"
+        })
+        .apply(
             colorear_estado,
             axis=1
         ),
         use_container_width=True
     )
- 
+
 
     if st.button(
         "📊 Exportar Excel"
