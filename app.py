@@ -1691,7 +1691,9 @@ if pagina == "Nueva Solicitud":
             if st.button(
                 "✅ Finalizar"
             ):
+                st.session_state.clear()
 
+                st.rerun()
                 st.session_state["solicitud_guardada"] = False
 
                 st.rerun()
