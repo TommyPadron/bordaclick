@@ -1018,7 +1018,21 @@ if pagina == "Consultas":
         ),
         use_container_width=True
     )
+    pedido_id = st.selectbox(
+        "Seleccione un pedido",
+        df_ordenes["id"].tolist()
+    )
 
+    st.write(
+        f"Pedido seleccionado: #{pedido_id:04d}"
+    )
+    if st.button(
+        "✏️ Editar Pedido"
+    ):
+
+        st.success(
+            f"Editando Pedido #{pedido_id:04d}"
+        )    
 
     if st.button(
         "📊 Exportar Excel"
