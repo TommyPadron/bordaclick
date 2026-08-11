@@ -1733,7 +1733,7 @@ if pagina == "Nueva Solicitud":
     )
     if "solicitud_guardada" not in st.session_state:
         st.session_state["solicitud_guardada"] = False
-        
+
     if st.button(
         "Guardar Solicitud",
         disabled=(
@@ -1741,6 +1741,9 @@ if pagina == "Nueva Solicitud":
             or st.session_state["solicitud_guardada"]
         )
     ):
+
+        # === VALIDACIONES ===
+
         if colegio == "Seleccione un colegio...":
 
             st.error(
@@ -1748,6 +1751,7 @@ if pagina == "Nueva Solicitud":
             )
 
             st.stop()
+
         if (
             delivery == "Sí (con costo adicional)"
             and
@@ -1760,7 +1764,7 @@ if pagina == "Nueva Solicitud":
 
             st.stop()
 
-        status = "Recibido"        
+        status = "Recibido"
 
         orden_id = guardar_orden(
             nombre,
@@ -1782,10 +1786,7 @@ if pagina == "Nueva Solicitud":
             saldo_pendiente,
             status
         )
-        if delivery == "Sí (con costo adicional)":
 
-            st.session_state["delivery_ya_cobrado"] = True
-            
         for _, fila in df.iterrows():
 
             guardar_detalle(
@@ -1796,59 +1797,24 @@ if pagina == "Nueva Solicitud":
                 fila["Color"],
                 int(fila["Cantidad"])
             )
-        if correo and "@" in correo:
-            orden = {
-                "id": orden_id,
-                "nombre": nombre,
-                "telefono": telefono,
-                "correo": correo,
-                "colegio": colegio,
-                "tipo_logo": logo,
-                "cantidad_total": cantidad_total,
-                "nombre_bordado": nombre_bordado,
-                "cantidad_nombre": cantidad_nombre,
-                "delivery": delivery,
-                "zona_delivery": zona_delivery,
-                "fecha_entrega": fecha_entrega,
-                "status": status,
-                "precio_bordado": precio_bordado,
-                "subtotal_bordado": subtotal_bordado,
-                "subtotal_nombres": subtotal_nombres,
-                "delivery_costo": delivery_costo,
-                "saldo_pendiente": saldo_pendiente,
-                "abono": abono
-            }            
 
-            detalle_orden = df
-            # st.write(
-            #     "COLUMNAS DF:",
-            #     detalle_orden.columns.tolist()
-            # )
-            nombre_pdf = generar_pdf_orden(
-                orden,
-                detalle_orden
-            )
+        st.session_state["solicitud_guardada"] = True
 
-            enviar_pdf_por_correo(
-                correo,
-                nombre,
-                orden_id,
-                fecha_entrega,
-                nombre_pdf
-            )
-            st.success(
-                "✅ Solicitud guardada correctamente"
-            )
+        st.rerun()
 
-            st.session_state["solicitud_guardada"] = True
+    if st.session_state["solicitud_guardada"]:
 
-            if st.button(
-                "➕ Nueva Solicitud"
-            ):
+        st.success(
+            "✅ Solicitud guardada correctamente"
+        )
 
-                st.session_state["solicitud_guardada"] = False
+        if st.button(
+            "➕ Nueva Solicitud"
+        ):
 
-                st.rerun()
+            st.session_state["solicitud_guardada"] = False
+
+            st.rerun()
             
 
 
