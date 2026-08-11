@@ -1298,15 +1298,6 @@ if pagina == "Nueva Solicitud":
         colegio
     )
     
-    # if cantidad_total >= 6:
-
-    #     precio_bordado = (
-    #         precio_bordado - 0.50
-    #     )
-
-    #     st.success(
-    #         "🎉 Promoción aplicada: -$0.50 por bordado por cantidad (6 o más prendas)"
-    #     )    
 
     st.info(
         f"💰 Precio del bordado: ${precio_bordado:.2f}"
@@ -1679,8 +1670,28 @@ if pagina == "Nueva Solicitud":
                 fecha_entrega,
                 nombre_pdf
             )
-        st.success("✅ Solicitud guardada correctamente")
+            
+        st.success(
+            "✅ Solicitud guardada correctamente"
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.button(
+                "➕ Agregar Otro Colegio"
+            )
+
+        with col2:
+
+            st.button(
+                "✅ Finalizar"
+            )
+
         st.session_state["solicitud_guardada"] = True
+
+
 
     
 
