@@ -1060,6 +1060,14 @@ if pagina == "Consultas":
             "Correo",
             value=pedido["correo"]
         )
+        
+        if st.button(
+            "💾 Guardar Cambios"
+        ):
+
+            st.success(
+                "✅ Cambios guardados"
+            )
 
     if st.button(
         "📊 Exportar Excel"
