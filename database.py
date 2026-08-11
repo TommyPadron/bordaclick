@@ -579,6 +579,25 @@ def obtener_detalle_orden(orden_id):
 
     return df
 
+def obtener_orden_por_id(pedido_id):
+
+    conn = sqlite3.connect(DATABASE)
+
+    query = f"""
+    SELECT *
+    FROM ordenes
+    WHERE id = {pedido_id}
+    """
+
+    df = pd.read_sql_query(
+        query,
+        conn
+    )
+
+    conn.close()
+
+    return df.iloc[0]
+
 def registrar_pago(
     orden_id,
     monto_pago
