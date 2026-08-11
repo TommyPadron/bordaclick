@@ -1836,11 +1836,19 @@ if pagina == "Nueva Solicitud":
                 fecha_entrega,
                 nombre_pdf
             )
-        st.success(
-            "✅ Solicitud guardada correctamente"
-        )
+            st.success(
+                "✅ Solicitud guardada correctamente"
+            )
 
-        st.session_state["solicitud_guardada"] = True
+            st.session_state["solicitud_guardada"] = True
+
+            if st.button(
+                "➕ Nueva Solicitud"
+            ):
+
+                st.session_state["solicitud_guardada"] = False
+
+                st.rerun()
             
 
 
