@@ -671,11 +671,11 @@ def generar_pdf_orden(
 
         datos_tabla.append(
             [
-                str(fila["tipo_prenda"]),
-                str(fila["talla"]),
-                str(fila["marca"]),
-                str(fila["color"]),
-                str(fila["cantidad"])
+                str(fila["Tipo prenda"]),
+                str(fila["Talla"]),
+                str(fila["Marca"]),
+                str(fila["Color"]),
+                str(fila["Cantidad"])
             ]
         )
 
