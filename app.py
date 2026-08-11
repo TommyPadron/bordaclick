@@ -1674,22 +1674,28 @@ if pagina == "Nueva Solicitud":
         st.success(
             "✅ Solicitud guardada correctamente"
         )
-
         col1, col2 = st.columns(2)
 
         with col1:
 
-            st.button(
+            if st.button(
                 "➕ Agregar Otro Colegio"
-            )
+            ):
+
+                st.session_state["solicitud_guardada"] = False
+
+                st.rerun()
 
         with col2:
 
-            st.button(
+            if st.button(
                 "✅ Finalizar"
-            )
+            ):
 
-        st.session_state["solicitud_guardada"] = True
+                st.session_state["solicitud_guardada"] = False
+
+                st.rerun()
+
 
 
 
