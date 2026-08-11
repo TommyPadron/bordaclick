@@ -1687,7 +1687,8 @@ if pagina == "Nueva Solicitud":
             orden = {
                 "id": orden_id,
                 "nombre": nombre,
-                "fecha_entrega": fecha_entrega
+                "fecha_entrega": fecha_entrega,
+                "status": status
             }
 
             detalle_orden = df
