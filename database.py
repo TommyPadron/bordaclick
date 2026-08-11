@@ -984,6 +984,7 @@ Bordados Escolares Personalizados
     )
 
     servidor.starttls()
+    
     try:
 
         servidor.login(
@@ -997,17 +998,13 @@ Bordados Escolares Personalizados
 
         servidor.quit()
 
-        raise Exception("PRUEBA: CORREO ENVIADO")
     except Exception as e:
 
-        raise Exception(
+        print(
             f"❌ Error Gmail: {e}"
         )
-    # except Exception as e:
 
-    #     raise Exception(
-    #         f"ERROR CORREO: {e}"
-    #     )
+        raise
     # try:
 
     #     servidor.login(
@@ -1021,15 +1018,13 @@ Bordados Escolares Personalizados
 
     #     servidor.quit()
 
-    #     print(
-    #         "✅ Gmail confirmó el envío"
-    #     )
-
+    #     raise Exception("PRUEBA: CORREO ENVIADO")
     # except Exception as e:
 
-    #     print(
+    #     raise Exception(
     #         f"❌ Error Gmail: {e}"
     #     )
+
 def obtener_costo_delivery(
     nombre
 ):
