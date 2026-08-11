@@ -64,8 +64,6 @@ from database import (
     contar_pedidos_pendientes,
 )          
 
-
-
 st.set_page_config(
     page_title="Bordaclick",
     page_icon="🧵",
@@ -97,21 +95,25 @@ clave_admin = st.sidebar.text_input(
 
 #st.write(repr(clave_admin))
 
-
 opciones_menu = [
     "Nueva Solicitud"
 ]
 
 if clave_admin == "BordaAdmin2026*":
 
-
     opciones_menu.append(
         "Consultas"
     )
 
     opciones_menu.append(
+        "📊 Reportes"
+    )
+
+    opciones_menu.append(
         "Catálogo de Bordados"
     )
+
+
 elif clave_admin:
 
     st.sidebar.error(
@@ -123,6 +125,64 @@ pagina = st.sidebar.selectbox(
     opciones_menu
 )
 
+if pagina == "📊 Reportes":
+
+    st.title(
+        "📊 Reportes Gerenciales"
+    )
+
+    df = obtener_ordenes()
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.metric(
+            "📦 Total Pedidos",
+            len(df)
+        )
+
+    with col2:
+
+        st.metric(
+            "💵 Saldo Pendiente",
+            f"${df['saldo_pendiente'].sum():.2f}"
+        )
+
+    with col3:
+
+        st.metric(
+            "🟨 Recibidos",
+            len(
+                df[
+                    df["status"] == "Recibido"
+                ]
+            )
+        )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.metric(
+            "🔵 En Producción",
+            len(
+                df[
+                    df["status"] == "En Producción"
+                ]
+            )
+        )
+
+    with col2:
+
+        st.metric(
+            "🟢 Listos para Entrega",
+            len(
+                df[
+                    df["status"] == "Listo para Entrega"
+                ]
+            )
+        )  
 
 if pagina == "Catálogo de Bordados":
 
