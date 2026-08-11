@@ -1685,18 +1685,16 @@ if pagina == "Nueva Solicitud":
                 st.session_state["solicitud_guardada"] = False
 
                 st.rerun()
+            with col2:
 
-        with col2:
+                if st.button(
+                    "✅ Finalizar"
+                ):
 
-            if st.button(
-                "✅ Finalizar"
-            ):
-                st.session_state.clear()
+                    st.session_state["solicitud_guardada"] = True
 
-                st.rerun()
-                st.session_state["solicitud_guardada"] = False
+                    st.rerun()
 
-                st.rerun()
 
 
 
