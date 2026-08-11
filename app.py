@@ -916,11 +916,29 @@ if pagina == "Consultas":
         )
 
     df_ordenes = obtener_ordenes()
+    def colorear_estado(fila):
+
+        estado = fila["status"]
+
+        if estado == "Recibido":
+            return ["background-color: #fff3cd"] * len(fila)
+
+        elif estado == "En Producción":
+            return ["background-color: #cfe2ff"] * len(fila)
+
+        elif estado == "Listo para Entrega":
+            return ["background-color: #d1e7dd"] * len(fila)
+
+        return [""] * len(fila)
 
     st.dataframe(
-        df_ordenes,
+        df_ordenes.style.apply(
+            colorear_estado,
+            axis=1
+        ),
         use_container_width=True
     )
+ 
 
     if st.button(
         "📊 Exportar Excel"
