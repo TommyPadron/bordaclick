@@ -1115,6 +1115,9 @@ if pagina == "Consultas":
                     and
                     "@" in correo_cliente
                 ):
+                    st.write("Delivery:", orden["delivery"])
+                    st.write("Correo:", correo_cliente)
+                    st.write("Estado enviado:", estado)
 
                     enviar_notificacion_estado(
                         correo_cliente,

@@ -975,6 +975,8 @@ Bordados Escolares Personalizados
     print("===== INICIO ENVIO EMAIL =====")
     print("DESTINATARIO:", destinatario)
     print("PDF:", pdf_path)
+    
+    
 
     servidor = smtplib.SMTP(
         "smtp.gmail.com",
@@ -982,7 +984,6 @@ Bordados Escolares Personalizados
     )
 
     servidor.starttls()
-
     try:
 
         servidor.login(
@@ -996,15 +997,39 @@ Bordados Escolares Personalizados
 
         servidor.quit()
 
-        print(
-            "✅ Gmail confirmó el envío"
-        )
-
+        raise Exception("PRUEBA: CORREO ENVIADO")
     except Exception as e:
 
-        print(
+        raise Exception(
             f"❌ Error Gmail: {e}"
         )
+    # except Exception as e:
+
+    #     raise Exception(
+    #         f"ERROR CORREO: {e}"
+    #     )
+    # try:
+
+    #     servidor.login(
+    #         "bordaclick@gmail.com",
+    #         "niiv nskd qzox xwnr"
+    #     )
+
+    #     servidor.send_message(
+    #         mensaje
+    #     )
+
+    #     servidor.quit()
+
+    #     print(
+    #         "✅ Gmail confirmó el envío"
+    #     )
+
+    # except Exception as e:
+
+    #     print(
+    #         f"❌ Error Gmail: {e}"
+    #     )
 def obtener_costo_delivery(
     nombre
 ):
@@ -1078,17 +1103,17 @@ Sistema de Gestión de Bordados Escolares
             )
 
             cuerpo = f"""
-    Hola {nombre_cliente},
+Hola {nombre_cliente},
 
-    Nos complace informarte que tu pedido #{orden_id:04d} ya está listo y será entregado mediante nuestro servicio de delivery.
+Nos complace informarte que tu pedido #{orden_id:04d} ya está listo y será entregado mediante nuestro servicio de delivery.
 
-    Nos pondremos en contacto contigo para coordinar la entrega.
+Nos pondremos en contacto contigo para coordinar la entrega.
 
-    Gracias por confiar en Bordaclick.
+Gracias por confiar en Bordaclick.
 
-    Bordaclick Diseños
-    Sistema de Gestión de Bordados Escolares
-    """
+Bordaclick Diseños
+Sistema de Gestión de Bordados Escolares
+"""
 
         else:
 
@@ -1097,17 +1122,46 @@ Sistema de Gestión de Bordados Escolares
             )
 
             cuerpo = f"""
-    Hola {nombre_cliente},
+Hola {nombre_cliente},
 
-    Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
+Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
 
-    Puedes comunicarte con nosotros para coordinar el retiro o la entrega de tu pedido.
+Puedes comunicarte con nosotros para coordinar el retiro o la entrega de tu pedido.
 
-    Gracias por confiar en Bordaclick.
+Gracias por confiar en Bordaclick.
 
-    Bordaclick Diseños
-    Sistema de Gestión de Bordados Escolares
-    """
+Bordaclick Diseños
+Sistema de Gestión de Bordados Escolares
+"""
+
+    else:
+        return
+
+    mensaje.attach(
+        MIMEText(
+            cuerpo,
+            "plain",
+            "utf-8"
+        )
+    )
+
+    servidor = smtplib.SMTP(
+        "smtp.gmail.com",
+        587
+    )
+
+    servidor.starttls()
+
+    servidor.login(
+        remitente,
+        password
+    )
+
+    servidor.send_message(
+        mensaje
+    )
+
+    servidor.quit()
 
 
 def contar_pedidos_pendientes():
