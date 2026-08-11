@@ -1537,10 +1537,23 @@ if pagina == "Nueva Solicitud":
         )
 
         if zona_delivery != "Seleccione zona de delivery...":
+            if st.session_state.get(
+                "delivery_ya_cobrado",
+                False
+            ):
 
-            delivery_costo = obtener_costo_delivery(
-                zona_delivery
-            )
+                delivery_costo = 0
+
+                st.info(
+                    "🚚 Delivery ya cobrado en una orden anterior."
+                )
+
+            else:
+
+                delivery_costo = obtener_costo_delivery(
+                    zona_delivery
+                )
+
 
             st.info(
                 f"🚚 Costo Delivery: ${delivery_costo:.2f}"
@@ -1622,7 +1635,10 @@ if pagina == "Nueva Solicitud":
             saldo_pendiente,
             status
         )
+        if delivery == "Sí (con costo adicional)":
 
+            st.session_state["delivery_ya_cobrado"] = True
+            
         for _, fila in df.iterrows():
 
             guardar_detalle(
@@ -1674,27 +1690,8 @@ if pagina == "Nueva Solicitud":
             "✅ Solicitud guardada correctamente"
         )
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            if st.button(
-                "➕ Agregar Otro Colegio"
-            ):
-
-                st.session_state["solicitud_guardada"] = False
-
-                st.rerun()
-
-        with col2:
-
-            if st.button(
-                "✅ Finalizar"
-            ):
-
-                st.session_state["solicitud_guardada"] = False
-
-                st.rerun()            
+        st.session_state["solicitud_guardada"] = True
+            
 
 
 
