@@ -1120,7 +1120,7 @@ if pagina == "Consultas":
             orden_seleccionada
         )
 
-        orden = datos_orden.iloc[0]        
+        orden = datos_orden 
      
 
         st.divider()
