@@ -1670,10 +1670,10 @@ if pagina == "Nueva Solicitud":
                 fecha_entrega,
                 nombre_pdf
             )
-            
         st.success(
             "✅ Solicitud guardada correctamente"
         )
+
         col1, col2 = st.columns(2)
 
         with col1:
@@ -1685,15 +1685,16 @@ if pagina == "Nueva Solicitud":
                 st.session_state["solicitud_guardada"] = False
 
                 st.rerun()
-            with col2:
 
-                if st.button(
-                    "✅ Finalizar"
-                ):
+        with col2:
 
-                    st.session_state["solicitud_guardada"] = True
+            if st.button(
+                "✅ Finalizar"
+            ):
 
-                    st.rerun()
+                st.session_state["solicitud_guardada"] = False
+
+                st.rerun()            
 
 
 
