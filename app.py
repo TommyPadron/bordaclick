@@ -1121,7 +1121,8 @@ if pagina == "Consultas":
                         orden["nombre"],
                         int(orden["id"]),
                         orden["fecha_entrega"],
-                        estado
+                        estado,
+                        orden["delivery"]
                     )
 
                 else:
@@ -1144,38 +1145,35 @@ if pagina == "Consultas":
         st.header(
             "📋 Orden de Servicio Bordaclick"
         )
- 
+
         if st.button(
             "🖨️ Generar PDF"
         ):
 
-            nombre_pdf = generar_pdf_orden(
+            st.session_state["pdf_generado"] = generar_pdf_orden(
                 orden,
                 detalle_orden
             )
-            enviar_pdf_por_correo(
-                orden["correo"],
-                orden["nombre"],
-                int(orden["id"]),
-                orden["fecha_entrega"],
-                nombre_pdf
-            )
 
             st.success(
-                "✅ Correo enviado"
+                "✅ PDF generado"
             )
+
+        if "pdf_generado" in st.session_state:
+
             with open(
-                nombre_pdf,
+                st.session_state["pdf_generado"],
                 "rb"
             ) as archivo_pdf:
 
                 st.download_button(
                     "📄 Descargar PDF",
                     data=archivo_pdf,
-                    file_name=nombre_pdf,
+                    file_name=st.session_state["pdf_generado"],
                     mime="application/pdf"
                 )
-
+       
+ 
         if st.button(
             "📑 Exportar Orden Excel"
         ):

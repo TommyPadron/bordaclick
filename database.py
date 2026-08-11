@@ -1037,7 +1037,8 @@ def enviar_notificacion_estado(
     nombre_cliente,
     orden_id,
     fecha_entrega,
-    estado
+    estado,
+    delivery
 ):
 
     remitente = "bordaclick@gmail.com"
@@ -1070,51 +1071,44 @@ Sistema de Gestión de Bordados Escolares
 
     elif estado == "Listo para Entrega":
 
-        mensaje["Subject"] = (
-            f"Bordaclick - Tu pedido #{orden_id:04d} está listo para ser retirado"
-        )
+        if delivery == "Sí":
 
-        cuerpo = f"""
-Hola {nombre_cliente},
+            mensaje["Subject"] = (
+                f"Bordaclick - Tu pedido #{orden_id:04d} está listo para entrega"
+            )
 
-Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
+            cuerpo = f"""
+    Hola {nombre_cliente},
 
-Puedes comunicarte con nosotros para coordinar el retiro o la entrega de tu pedido.
+    Nos complace informarte que tu pedido #{orden_id:04d} ya está listo y será entregado mediante nuestro servicio de delivery.
 
-Gracias por confiar en Bordaclick.
+    Nos pondremos en contacto contigo para coordinar la entrega.
 
-Bordaclick Diseños
-Sistema de Gestión de Bordados Escolares
-"""
+    Gracias por confiar en Bordaclick.
 
-    else:
-        return
+    Bordaclick Diseños
+    Sistema de Gestión de Bordados Escolares
+    """
 
-    mensaje.attach(
-        MIMEText(
-            cuerpo,
-            "plain",
-            "utf-8"
-        )
-    )
+        else:
 
-    servidor = smtplib.SMTP(
-        "smtp.gmail.com",
-        587
-    )
+            mensaje["Subject"] = (
+                f"Bordaclick - Tu pedido #{orden_id:04d} está listo para ser retirado"
+            )
 
-    servidor.starttls()
+            cuerpo = f"""
+    Hola {nombre_cliente},
 
-    servidor.login(
-        remitente,
-        password
-    )
+    Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
 
-    servidor.send_message(
-        mensaje
-    )
+    Puedes comunicarte con nosotros para coordinar el retiro o la entrega de tu pedido.
 
-    servidor.quit()
+    Gracias por confiar en Bordaclick.
+
+    Bordaclick Diseños
+    Sistema de Gestión de Bordados Escolares
+    """
+
 
 def contar_pedidos_pendientes():
 
