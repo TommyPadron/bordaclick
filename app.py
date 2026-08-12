@@ -970,7 +970,6 @@ def generar_excel_orden(
     wb.save(nombre_excel)
 
     return nombre_excel
-        
 if pagina == "Consultas":
 
     st.title(
@@ -992,6 +991,7 @@ if pagina == "Consultas":
         )
 
     df_ordenes = obtener_ordenes()
+
     def colorear_estado(fila):
 
         estado = fila["status"]
@@ -1006,7 +1006,7 @@ if pagina == "Consultas":
             return ["background-color: #d1e7dd"] * len(fila)
 
         return [""] * len(fila)
-    
+
     st.dataframe(
         df_ordenes.style
         .format({
@@ -1018,393 +1018,585 @@ if pagina == "Consultas":
         ),
         use_container_width=True
     )
+
     pedido_id = st.selectbox(
         "Seleccione un pedido",
         df_ordenes["id"].tolist()
     )
 
-    st.write(
-        f"Pedido seleccionado: #{pedido_id:04d}"
+    st.info(
+        f"📦 Pedido seleccionado: #{pedido_id:04d}"
     )
 
-    if st.button(
-        "✏️ Editar Pedido"
+    pedido = obtener_orden_por_id(
+        pedido_id
+    )
+
+    with st.expander(
+        "👤 Cliente",
+        expanded=True
     ):
 
-        st.session_state["modo_edicion"] = True
+        st.write(
+            f"**Nombre:** {pedido['nombre']}"
+        )
 
-    if st.session_state.get(
-        "modo_edicion",
-        False
+        st.write(
+            f"**Teléfono:** {pedido['telefono']}"
+        )
+
+        st.write(
+            f"**Correo:** {pedido['correo']}"
+        )
+
+        if "colegio" in pedido:
+            st.write(
+                f"**Colegio:** {pedido['colegio']}"
+            )
+
+    with st.expander(
+        "🏭 Producción"
     ):
 
-        pedido = obtener_orden_por_id(
-            pedido_id
-        )
-
-        st.success(
-            f"✅ Editando Pedido #{pedido_id:04d}"
-        )
-
-        nombre_edit = st.text_input(
-            "Nombre",
-            value=pedido["nombre"]
-        )
-
-        telefono_edit = st.text_input(
-            "Teléfono",
-            value=pedido["telefono"]
-        )
-
-        correo_edit = st.text_input(
-            "Correo",
-            value=pedido["correo"]
-        )
-        
-        if st.button(
-            "💾 Guardar Cambios"
-        ):
-
-            st.success(
-                "✅ Cambios guardados"
+        if "status" in pedido:
+            st.write(
+                f"**Estado:** {pedido['status']}"
             )
 
-    if st.button(
-        "📊 Exportar Excel"
+        if "fecha_entrega" in pedido:
+            st.write(
+                f"**Fecha Entrega:** {pedido['fecha_entrega']}"
+            )
+
+        if "delivery" in pedido:
+            st.write(
+                f"**Delivery:** {pedido['delivery']}"
+            )
+
+        if "zona_delivery" in pedido:
+            st.write(
+                f"**Zona Delivery:** {pedido['zona_delivery']}"
+            )
+
+    with st.expander(
+        "💰 Resumen Financiero"
     ):
 
-        archivo_excel = "Bordaclick_Ordenes.xlsx"
-
-        with pd.ExcelWriter(
-            archivo_excel,
-            engine="openpyxl"
-        ) as writer:
-
-            df_ordenes.to_excel(
-                writer,
-                sheet_name="Historico",
-                index=False
-            )
-
-            hoja = writer.sheets["Historico"]
-
-            for columna in hoja.columns:
-
-                longitud = 0
-
-                for celda in columna:
-
-                    valor = str(celda.value)
-
-                    if len(valor) > longitud:
-
-                        longitud = len(valor)
-
-                hoja.column_dimensions[
-                    columna[0].column_letter
-                ].width = longitud + 5
-
-        st.success(
-            f"✅ Excel generado: {archivo_excel}"
-        )
-
-        with open(
-            archivo_excel,
-            "rb"
-        ) as archivo:
-
-            st.download_button(
-                "📊 Descargar Histórico",
-                data=archivo.read(),
-                file_name=archivo_excel,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-
-    if not df_ordenes.empty:
-
-        orden_seleccionada = st.selectbox(
-            "Seleccione una Orden",
-            df_ordenes["id"]
-        )
-
-        datos_orden = obtener_orden_por_id(
-            orden_seleccionada
-        )
-
-        detalle_orden = obtener_detalle_orden(
-            orden_seleccionada
-        )
-
-        orden = datos_orden 
-     
-
-        st.divider()
-
-        st.header(
-            f"📋 Pedido #{int(orden['id']):04d}"
-        )
-        
-        if orden["saldo_pendiente"] <= 0:
-
-            st.success(
-                "🟢 Estado de Pago: Pagado"
-            )
-
-        else:
-
-            st.warning(
-                "🔴 Estado de Pago: No Pagado"
-            )    
-            
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
-
-            estados = [
-                "Recibido",
-                "En Producción",
-                "En Revisión del Cliente",
-                "Listo para Entrega",
-                "Entregado",
-                "Anulado"
-            ]
-
-            estado_actual = orden["status"]
-
-            indice_estado = estados.index(
-                estado_actual
-            ) if estado_actual in estados else 0
-
-            estado = st.selectbox(
-                "Estado",
-                estados,
-                index=indice_estado
-            )
-            st.subheader(
-                "💰 Registrar Pago"
-            )
-
-            monto_pago = st.number_input(
-                "Monto del Pago",
-                min_value=0.0,
-                step=1.0
-            )
-
-            if st.button(
-                "💰 Registrar Pago"
-            ):
-
-                registrar_pago(
-                    int(orden["id"]),
-                    monto_pago
-                )
-
-                st.success(
-                    "✅ Pago registrado"
-                )
-
-                st.rerun()
-            if st.button(
-                "💾 Actualizar Estado"
-            ):
-
-                actualizar_status_orden(
-                    int(orden["id"]),
-                    estado
-                )
-
-                correo_cliente = str(
-                    orden["correo"]
-                ).strip()
-
-                if (
-                    correo_cliente
-                    and
-                    "@" in correo_cliente
-                ):
-                    st.write("Delivery:", orden["delivery"])
-                    st.write("Correo:", correo_cliente)
-                    st.write("Estado enviado:", estado)
-
-                    enviar_notificacion_estado(
-                        correo_cliente,
-                        orden["nombre"],
-                        int(orden["id"]),
-                        orden["fecha_entrega"],
-                        estado,
-                        orden["delivery"]
-                    )
-
-                else:
-
-                    st.info(
-                        "ℹ️ Este cliente no tiene un correo válido. No se enviará notificación."
-                    )
-
-                st.success(
-                    "✅ Estado actualizado"
-                )
-
-   
-        with col2:
-
-            st.info(
-                f"Fecha Entrega: {orden['fecha_entrega']}"
-            )
-
-        st.header(
-            "📋 Orden de Servicio Bordaclick"
-        )
-
-        if st.button(
-            "🖨️ Generar PDF"
-        ):
-
-            st.session_state["pdf_generado"] = generar_pdf_orden(
-                orden,
-                detalle_orden
-            )
-
-            st.success(
-                "✅ PDF generado"
-            )
-
-        if "pdf_generado" in st.session_state:
-
-            with open(
-                st.session_state["pdf_generado"],
-                "rb"
-            ) as archivo_pdf:
-
-                st.download_button(
-                    "📄 Descargar PDF",
-                    data=archivo_pdf,
-                    file_name=st.session_state["pdf_generado"],
-                    mime="application/pdf"
-                )
-       
- 
-        if st.button(
-            "📑 Exportar Orden Excel"
-        ):
-
-            nombre_excel = generar_excel_orden(
-                orden,
-                detalle_orden
-            )
-
-            with open(
-                nombre_excel,
-                "rb"
-            ) as archivo_excel:
-
-                st.download_button(
-                    "📊 Descargar Excel",
-                    data=archivo_excel,
-                    file_name=nombre_excel,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-                      
-               
-        
-        st.subheader("👤 Datos del Cliente")
-
-        st.write(
-            f"**Nombre:** {orden['nombre']}"
-        )
-
-        st.write(
-            f"**Teléfono:** {orden['telefono']}"
-        )
-
-        st.write(
-            f"**Correo:** {orden['correo']}"
-        )
-
-        st.write(
-            f"**Colegio:** {orden['colegio']}"
-        )
-
-        st.subheader("🧵 Datos de Producción")
-
-        st.write(
-            f"**Tipo de Logo:** {orden['tipo_logo']}"
-        )
-
-        st.write(
-            f"**Cantidad Total:** {orden['cantidad_total']}"
-        )
-
-        st.write(
-            f"**Fecha de Entrega:** {orden['fecha_entrega']}"
-        )
-
-        st.write(
-            f"**Nombre Bordado:** {orden['nombre_bordado']}"
-        )
-
-        st.write(
-            f"**Cantidad con Nombre:** {orden['cantidad_nombre']}"
-        )
-
-        st.divider()
-
-        st.subheader("💰 Resumen Financiero")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            st.metric(
-                "Precio Bordado",
-                f"${orden['precio_bordado']:.2f}"
-            )
-
-            st.metric(
-                "Subtotal Bordado",
-                f"${orden['subtotal_bordado']:.2f}"
-            )
-
-            st.metric(
-                "Subtotal Nombres",
-                f"${orden['subtotal_nombres']:.2f}"
-            )
-
-        with col2:
-
-            st.metric(
-                "Delivery",
-                f"${orden['delivery_costo']:.2f}"
-            )
 
             st.metric(
                 "Abono",
-                f"${orden['abono']:.2f}"
+                f"${pedido.get('abono',0):.2f}"
+            )
+
+        with col2:
+
+            st.metric(
+                "Saldo",
+                f"${pedido.get('saldo_pendiente',0):.2f}"
+            )
+
+        with col3:
+
+            total = (
+                pedido.get("abono",0)
+                +
+                pedido.get("saldo_pendiente",0)
             )
 
             st.metric(
-                "Saldo Pendiente",
-                f"${orden['saldo_pendiente']:.2f}"
-            )
-            total_general = (
-                orden["subtotal_bordado"]
-                + orden["subtotal_nombres"]
-                + orden["delivery_costo"]
+                "Total",
+                f"${total:.2f}"
             )
 
-            st.metric(
-                "Total General",
-                f"${total_general:.2f}"
-            )
+    with st.expander(
+        "👕 Prendas"
+    ):
 
-        st.divider()
-
-        st.subheader("👔 Desglose de Prendas")
+        detalle_orden = obtener_detalle_orden(
+            pedido_id
+        )
 
         st.dataframe(
             detalle_orden,
             use_container_width=True
         )
+
+    with st.expander(
+        "⚙️ Acciones"
+    ):
+
+        if st.button(
+            "✏️ Editar Pedido"
+        ):
+            st.session_state["modo_edicion"] = True
+
+        if st.session_state.get(
+            "modo_edicion",
+            False
+        ):
+
+            st.success(
+                f"✅ Editando Pedido #{pedido_id:04d}"
+            )
+
+            nombre_edit = st.text_input(
+                "Nombre",
+                value=pedido["nombre"]
+            )
+
+            telefono_edit = st.text_input(
+                "Teléfono",
+                value=pedido["telefono"]
+            )
+
+            correo_edit = st.text_input(
+                "Correo",
+                value=pedido["correo"]
+            )
+
+            if st.button(
+                "💾 Guardar Cambios"
+            ):
+                st.success(
+                    "✅ Cambios guardados"
+                )        
+# if pagina == "Consultas":
+
+#     st.title(
+#         "📋 Consulta de Órdenes"
+#     )
+
+#     pendientes = contar_pedidos_pendientes()
+
+#     if pendientes > 0:
+
+#         st.warning(
+#             f"🔔 Tienes {pendientes} pedidos nuevos por revisar"
+#         )
+
+#     else:
+
+#         st.success(
+#             "✅ No hay pedidos nuevos pendientes"
+#         )
+
+#     df_ordenes = obtener_ordenes()
+#     def colorear_estado(fila):
+
+#         estado = fila["status"]
+
+#         if estado == "Recibido":
+#             return ["background-color: #fff3cd"] * len(fila)
+
+#         elif estado == "En Producción":
+#             return ["background-color: #cfe2ff"] * len(fila)
+
+#         elif estado == "Listo para Entrega":
+#             return ["background-color: #d1e7dd"] * len(fila)
+
+#         return [""] * len(fila)
+    
+#     st.dataframe(
+#         df_ordenes.style
+#         .format({
+#             "saldo_pendiente": "${:.2f}"
+#         })
+#         .apply(
+#             colorear_estado,
+#             axis=1
+#         ),
+#         use_container_width=True
+#     )
+#     pedido_id = st.selectbox(
+#         "Seleccione un pedido",
+#         df_ordenes["id"].tolist()
+#     )
+
+#     st.write(
+#         f"Pedido seleccionado: #{pedido_id:04d}"
+#     )
+
+#     if st.button(
+#         "✏️ Editar Pedido"
+#     ):
+
+#         st.session_state["modo_edicion"] = True
+
+#     if st.session_state.get(
+#         "modo_edicion",
+#         False
+#     ):
+
+#         pedido = obtener_orden_por_id(
+#             pedido_id
+#         )
+
+#         st.success(
+#             f"✅ Editando Pedido #{pedido_id:04d}"
+#         )
+
+#         nombre_edit = st.text_input(
+#             "Nombre",
+#             value=pedido["nombre"]
+#         )
+
+#         telefono_edit = st.text_input(
+#             "Teléfono",
+#             value=pedido["telefono"]
+#         )
+
+#         correo_edit = st.text_input(
+#             "Correo",
+#             value=pedido["correo"]
+#         )
+        
+#         if st.button(
+#             "💾 Guardar Cambios"
+#         ):
+
+#             st.success(
+#                 "✅ Cambios guardados"
+#             )
+
+#     if st.button(
+#         "📊 Exportar Excel"
+#     ):
+
+#         archivo_excel = "Bordaclick_Ordenes.xlsx"
+
+#         with pd.ExcelWriter(
+#             archivo_excel,
+#             engine="openpyxl"
+#         ) as writer:
+
+#             df_ordenes.to_excel(
+#                 writer,
+#                 sheet_name="Historico",
+#                 index=False
+#             )
+
+#             hoja = writer.sheets["Historico"]
+
+#             for columna in hoja.columns:
+
+#                 longitud = 0
+
+#                 for celda in columna:
+
+#                     valor = str(celda.value)
+
+#                     if len(valor) > longitud:
+
+#                         longitud = len(valor)
+
+#                 hoja.column_dimensions[
+#                     columna[0].column_letter
+#                 ].width = longitud + 5
+
+#         st.success(
+#             f"✅ Excel generado: {archivo_excel}"
+#         )
+
+#         with open(
+#             archivo_excel,
+#             "rb"
+#         ) as archivo:
+
+#             st.download_button(
+#                 "📊 Descargar Histórico",
+#                 data=archivo.read(),
+#                 file_name=archivo_excel,
+#                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#             )
+
+#     if not df_ordenes.empty:
+
+#         orden_seleccionada = st.selectbox(
+#             "Seleccione una Orden",
+#             df_ordenes["id"]
+#         )
+
+#         datos_orden = obtener_orden_por_id(
+#             orden_seleccionada
+#         )
+
+#         detalle_orden = obtener_detalle_orden(
+#             orden_seleccionada
+#         )
+
+#         orden = datos_orden 
+     
+
+#         st.divider()
+
+#         st.header(
+#             f"📋 Pedido #{int(orden['id']):04d}"
+#         )
+        
+#         if orden["saldo_pendiente"] <= 0:
+
+#             st.success(
+#                 "🟢 Estado de Pago: Pagado"
+#             )
+
+#         else:
+
+#             st.warning(
+#                 "🔴 Estado de Pago: No Pagado"
+#             )    
+            
+#         col1, col2 = st.columns(2)
+
+#         with col1:
+
+#             estados = [
+#                 "Recibido",
+#                 "En Producción",
+#                 "En Revisión del Cliente",
+#                 "Listo para Entrega",
+#                 "Entregado",
+#                 "Anulado"
+#             ]
+
+#             estado_actual = orden["status"]
+
+#             indice_estado = estados.index(
+#                 estado_actual
+#             ) if estado_actual in estados else 0
+
+#             estado = st.selectbox(
+#                 "Estado",
+#                 estados,
+#                 index=indice_estado
+#             )
+#             st.subheader(
+#                 "💰 Registrar Pago"
+#             )
+
+#             monto_pago = st.number_input(
+#                 "Monto del Pago",
+#                 min_value=0.0,
+#                 step=1.0
+#             )
+
+#             if st.button(
+#                 "💰 Registrar Pago"
+#             ):
+
+#                 registrar_pago(
+#                     int(orden["id"]),
+#                     monto_pago
+#                 )
+
+#                 st.success(
+#                     "✅ Pago registrado"
+#                 )
+
+#                 st.rerun()
+#             if st.button(
+#                 "💾 Actualizar Estado"
+#             ):
+
+#                 actualizar_status_orden(
+#                     int(orden["id"]),
+#                     estado
+#                 )
+
+#                 correo_cliente = str(
+#                     orden["correo"]
+#                 ).strip()
+
+#                 if (
+#                     correo_cliente
+#                     and
+#                     "@" in correo_cliente
+#                 ):
+#                     st.write("Delivery:", orden["delivery"])
+#                     st.write("Correo:", correo_cliente)
+#                     st.write("Estado enviado:", estado)
+
+#                     enviar_notificacion_estado(
+#                         correo_cliente,
+#                         orden["nombre"],
+#                         int(orden["id"]),
+#                         orden["fecha_entrega"],
+#                         estado,
+#                         orden["delivery"]
+#                     )
+
+#                 else:
+
+#                     st.info(
+#                         "ℹ️ Este cliente no tiene un correo válido. No se enviará notificación."
+#                     )
+
+#                 st.success(
+#                     "✅ Estado actualizado"
+#                 )
+
+   
+#         with col2:
+
+#             st.info(
+#                 f"Fecha Entrega: {orden['fecha_entrega']}"
+#             )
+
+#         st.header(
+#             "📋 Orden de Servicio Bordaclick"
+#         )
+
+#         if st.button(
+#             "🖨️ Generar PDF"
+#         ):
+
+#             st.session_state["pdf_generado"] = generar_pdf_orden(
+#                 orden,
+#                 detalle_orden
+#             )
+
+#             st.success(
+#                 "✅ PDF generado"
+#             )
+
+#         if "pdf_generado" in st.session_state:
+
+#             with open(
+#                 st.session_state["pdf_generado"],
+#                 "rb"
+#             ) as archivo_pdf:
+
+#                 st.download_button(
+#                     "📄 Descargar PDF",
+#                     data=archivo_pdf,
+#                     file_name=st.session_state["pdf_generado"],
+#                     mime="application/pdf"
+#                 )
+       
+ 
+#         if st.button(
+#             "📑 Exportar Orden Excel"
+#         ):
+
+#             nombre_excel = generar_excel_orden(
+#                 orden,
+#                 detalle_orden
+#             )
+
+#             with open(
+#                 nombre_excel,
+#                 "rb"
+#             ) as archivo_excel:
+
+#                 st.download_button(
+#                     "📊 Descargar Excel",
+#                     data=archivo_excel,
+#                     file_name=nombre_excel,
+#                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#                 )
+                      
+               
+        
+#         st.subheader("👤 Datos del Cliente")
+
+#         st.write(
+#             f"**Nombre:** {orden['nombre']}"
+#         )
+
+#         st.write(
+#             f"**Teléfono:** {orden['telefono']}"
+#         )
+
+#         st.write(
+#             f"**Correo:** {orden['correo']}"
+#         )
+
+#         st.write(
+#             f"**Colegio:** {orden['colegio']}"
+#         )
+
+#         st.subheader("🧵 Datos de Producción")
+
+#         st.write(
+#             f"**Tipo de Logo:** {orden['tipo_logo']}"
+#         )
+
+#         st.write(
+#             f"**Cantidad Total:** {orden['cantidad_total']}"
+#         )
+
+#         st.write(
+#             f"**Fecha de Entrega:** {orden['fecha_entrega']}"
+#         )
+
+#         st.write(
+#             f"**Nombre Bordado:** {orden['nombre_bordado']}"
+#         )
+
+#         st.write(
+#             f"**Cantidad con Nombre:** {orden['cantidad_nombre']}"
+#         )
+
+#         st.divider()
+
+#         st.subheader("💰 Resumen Financiero")
+
+#         col1, col2 = st.columns(2)
+
+#         with col1:
+
+#             st.metric(
+#                 "Precio Bordado",
+#                 f"${orden['precio_bordado']:.2f}"
+#             )
+
+#             st.metric(
+#                 "Subtotal Bordado",
+#                 f"${orden['subtotal_bordado']:.2f}"
+#             )
+
+#             st.metric(
+#                 "Subtotal Nombres",
+#                 f"${orden['subtotal_nombres']:.2f}"
+#             )
+
+#         with col2:
+
+#             st.metric(
+#                 "Delivery",
+#                 f"${orden['delivery_costo']:.2f}"
+#             )
+
+#             st.metric(
+#                 "Abono",
+#                 f"${orden['abono']:.2f}"
+#             )
+
+#             st.metric(
+#                 "Saldo Pendiente",
+#                 f"${orden['saldo_pendiente']:.2f}"
+#             )
+#             total_general = (
+#                 orden["subtotal_bordado"]
+#                 + orden["subtotal_nombres"]
+#                 + orden["delivery_costo"]
+#             )
+
+#             st.metric(
+#                 "Total General",
+#                 f"${total_general:.2f}"
+#             )
+
+#         st.divider()
+
+#         st.subheader("👔 Desglose de Prendas")
+
+#         st.dataframe(
+#             detalle_orden,
+#             use_container_width=True
+#         )
     
 if pagina == "Nueva Solicitud":
 
