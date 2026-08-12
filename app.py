@@ -1379,8 +1379,8 @@ if pagina == "Consultas":
                 value=pedido["correo"]
             )
             st.subheader("👕 Prendas")
-
-            detalle_edit = st.data_editor(detalle_orden)            
+          
+            detalle_edit = st.data_editor(detalle_orden, num_rows="dynamic")          
             
             if st.button(
                 "💾 Guardar Cambios"
