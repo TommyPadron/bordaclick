@@ -1405,26 +1405,26 @@ if pagina == "Consultas":
             detalle_orden,
             use_container_width=True
         )
- 
-if pagina == "Nueva Solicitud":
+    
+    if pagina == "Nueva Solicitud":
 
-    st.subheader("Solicitud de Servicio de Bordado")
+        st.subheader("Solicitud de Servicio de Bordado")
 
-    st.header("Datos del Cliente")
-    nombre = st.text_input(
-        "Nombre y Apellido",
-        key="nombre"
-    )
-    st.write(st.session_state)
-    telefono = st.text_input(
-        "Telefono / WhatsApp",
-        key="telefono"
-    )
+        st.header("Datos del Cliente")
+        nombre = st.text_input(
+            "Nombre y Apellido",
+            key="nombre"
+        )
+        st.write(st.session_state)
+        telefono = st.text_input(
+            "Telefono / WhatsApp",
+            key="telefono"
+        )
 
-    correo = st.text_input(
-        "Correo Electronico",
-        key="correo"
-    )
+        correo = st.text_input(
+            "Correo Electronico",
+            key="correo"
+        )
 
 
     if telefono:
@@ -1816,10 +1816,8 @@ if pagina == "Nueva Solicitud":
         st.success(
             "✅ Solicitud guardada correctamente"
         )
-        
-        if st.button(
-            "➕ Nueva Solicitud"
-        ):
+
+        if st.button("➕ Nueva Solicitud"):
 
             st.session_state["solicitud_guardada"] = False
 
@@ -1832,8 +1830,8 @@ if pagina == "Nueva Solicitud":
             if "correo" in st.session_state:
                 del st.session_state["correo"]
 
-            st.rerun()        
-   
+            st.rerun()
+
 
 
 
