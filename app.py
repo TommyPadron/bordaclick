@@ -62,7 +62,8 @@ from database import (
     obtener_costo_delivery,
     enviar_notificacion_estado,
     contar_pedidos_pendientes,
-    actualizar_orden
+    actualizar_orden,
+    eliminar_detalle_orden
 )          
 
 st.set_page_config(
@@ -1377,6 +1378,10 @@ if pagina == "Consultas":
                 "Correo",
                 value=pedido["correo"]
             )
+            st.subheader("👕 Prendas")
+
+            detalle_edit = st.data_editor(detalle_orden)            
+            
             if st.button(
                 "💾 Guardar Cambios"
             ):

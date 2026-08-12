@@ -1214,7 +1214,27 @@ def actualizar_orden(
     conn.commit()
 
     conn.close()
+def eliminar_detalle_orden(
+    orden_id
+):
 
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM orden_detalle
+        WHERE orden_id = ?
+        """,
+        (
+            orden_id,
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
 
     
 
