@@ -1412,10 +1412,10 @@ if pagina == "Nueva Solicitud":
 
     st.header("Datos del Cliente")
     nombre = st.text_input(
-        "PRUEBA NOMBRE",
+        "Nombre y Apellido",
         key="nombre"
     )
-    st.write(st.session_state)
+    
     telefono = st.text_input(
         "Telefono / WhatsApp",
         key="telefono"
@@ -1425,7 +1425,7 @@ if pagina == "Nueva Solicitud":
         "Correo Electronico",
         key="correo"
     )
-
+    st.write(st.session_state)
 
     if telefono:
         if not re.match(r'^\d{10,}$', telefono):
