@@ -1411,12 +1411,21 @@ if pagina == "Nueva Solicitud":
     st.subheader("Solicitud de Servicio de Bordado")
 
     st.header("Datos del Cliente")
+    nombre = st.text_input(
+        "Nombre y Apellido",
+        key="nombre"
+    )
 
-    nombre = st.text_input("Nombre y Apellido *")
+    telefono = st.text_input(
+        "Telefono / WhatsApp",
+        key="telefono"
+    )
 
-    telefono = st.text_input("Teléfono / WhatsApp *")
+    correo = st.text_input(
+        "Correo Electronico",
+        key="correo"
+    )
 
-    correo = st.text_input("Correo Electrónico *")
 
     if telefono:
         if not re.match(r'^\d{10,}$', telefono):
@@ -1807,14 +1816,18 @@ if pagina == "Nueva Solicitud":
         st.success(
             "✅ Solicitud guardada correctamente"
         )
+    if st.button(
+        "➕ Nueva Solicitud"
+    ):
 
-        if st.button(
-            "➕ Nueva Solicitud"
-        ):
+        st.session_state["solicitud_guardada"] = False
 
-            st.session_state["solicitud_guardada"] = False
+        st.session_state["nombre"] = ""
+        st.session_state["telefono"] = ""
+        st.session_state["correo"] = ""
 
-            st.rerun()
+        st.rerun()
+
             
 
 
