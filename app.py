@@ -1137,55 +1137,7 @@ if pagina == "Consultas":
     with st.expander(
         "💰 Pagos"
     ):
-
-        estado_pago = (
-            "✅ Pagado"
-            if pedido["saldo_pendiente"] <= 0
-            else "🔴 No Pagado"
-        )
-
-        st.info(
-            f"Estado de Pago: {estado_pago}"
-        )
-
-if pedido["saldo_pendiente"] > 0:
-
-    monto_pago = st.number_input(
-        "Monto del Pago",
-        min_value=0.0,
-        step=1.0
-    )
-
-    if st.button(
-        "💰 Registrar Pago"
-    ):
-
-        if monto_pago > pedido["saldo_pendiente"]:
-
-            st.error(
-                "❌ El pago no puede ser mayor al saldo pendiente."
-            )
-
-        else:
-
-            registrar_pago(
-                pedido_id,
-                monto_pago
-            )
-
-            st.success(
-                "✅ Pago registrado correctamente"
-            )
-
-            st.rerun()
-
-else:
-
-    st.success(
-        "✅ Este pedido ya se encuentra totalmente pagado."
-    )
-
-
+            pass
     with st.expander(
         "💰 Resumen Financiero"
     ):
