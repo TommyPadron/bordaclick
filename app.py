@@ -1057,6 +1057,17 @@ if pagina == "Consultas":
         "🏭 Producción"
     ):
 
+        if st.session_state.get(
+            "estado_actualizado",
+            False
+        ):
+
+            st.success(
+                "✅ Estado actualizado correctamente"
+            )
+
+            st.session_state["estado_actualizado"] = False
+
         st.write(
             f"**Estado actual:** {pedido['status']}"
         )
@@ -1089,9 +1100,23 @@ if pagina == "Consultas":
                 nuevo_estado
             )
 
-            st.success(
-                "✅ Estado actualizado correctamente"
-            )
+            if nuevo_estado in [
+                "En Producción",
+                "Listo para Entrega"
+            ]:
+
+                enviar_notificacion_estado(
+                    pedido["correo"],
+                    pedido["nombre"],
+                    pedido["id"],
+                    pedido["fecha_entrega"],
+                    nuevo_estado,
+                    pedido["delivery"]
+                )
+
+            st.session_state[
+                "estado_actualizado"
+            ] = True
 
             st.rerun()
 
