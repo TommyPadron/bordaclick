@@ -1053,15 +1053,47 @@ if pagina == "Consultas":
             st.write(
                 f"**Colegio:** {pedido['colegio']}"
             )
-
     with st.expander(
         "🏭 Producción"
     ):
 
-        if "status" in pedido:
-            st.write(
-                f"**Estado:** {pedido['status']}"
+        st.write(
+            f"**Estado actual:** {pedido['status']}"
+        )
+
+        estados = [
+            "Recibido",
+            "En Producción",
+            "Listo para Entrega",
+            "Anulado"
+        ]
+
+        indice_estado = (
+            estados.index(pedido["status"])
+            if pedido["status"] in estados
+            else 0
+        )
+
+        nuevo_estado = st.selectbox(
+            "Cambiar estado",
+            estados,
+            index=indice_estado
+        )
+
+        if st.button(
+            "🔄 Actualizar Estado"
+        ):
+
+            actualizar_status_orden(
+                pedido_id,
+                nuevo_estado
             )
+
+            st.success(
+                "✅ Estado actualizado correctamente"
+            )
+
+            st.rerun()
 
         if "fecha_entrega" in pedido:
             st.write(
@@ -1077,7 +1109,40 @@ if pagina == "Consultas":
             st.write(
                 f"**Zona Delivery:** {pedido['zona_delivery']}"
             )
+    with st.expander(
+        "💰 Pagos"
+    ):
 
+        estado_pago = (
+            "✅ Pagado"
+            if pedido["saldo_pendiente"] <= 0
+            else "🔴 No Pagado"
+        )
+
+        st.info(
+            f"Estado de Pago: {estado_pago}"
+        )
+
+        monto_pago = st.number_input(
+            "Monto del Pago",
+            min_value=0.0,
+            step=1.0
+        )
+
+        if st.button(
+            "💰 Registrar Pago"
+        ):
+
+            registrar_pago(
+                pedido_id,
+                monto_pago
+            )
+
+            st.success(
+                "✅ Pago registrado correctamente"
+            )
+
+            st.rerun()
     with st.expander(
         "💰 Resumen Financiero"
     ):
@@ -1123,20 +1188,133 @@ if pagina == "Consultas":
             detalle_orden,
             use_container_width=True
         )
+    with st.expander(
+        "📄 Documentos"
+    ):
 
+        if st.button(
+            "📄 Generar PDF"
+        ):
+
+            detalle_orden = obtener_detalle_orden(
+                pedido_id
+            )
+
+            pdf_file = generar_pdf_orden(
+                pedido,
+                detalle_orden
+            )
+
+            st.success(
+                "✅ PDF generado"
+            )
+
+            with open(
+                pdf_file,
+                "rb"
+            ) as archivo:
+
+                st.download_button(
+                    "📥 Descargar PDF",
+                    archivo,
+                    file_name=pdf_file,
+                    mime="application/pdf"
+                )
+
+        if st.button(
+            "📊 Exportar Orden Excel"
+        ):
+
+            detalle_orden = obtener_detalle_orden(
+                pedido_id
+            )
+
+            excel_file = generar_excel_orden(
+                pedido,
+                detalle_orden
+            )
+
+            with open(
+                excel_file,
+                "rb"
+            ) as archivo:
+
+                st.download_button(
+                    "📥 Descargar Excel",
+                    archivo,
+                    file_name=excel_file,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+                
+    with st.expander(
+        "📧 Comunicaciones"
+    ):
+
+        st.info(
+            f"Correo registrado: {pedido['correo']}"
+        )
+
+        if st.button(
+            "📧 Reenviar Correo"
+        ):
+
+            detalle_orden = obtener_detalle_orden(
+                pedido_id
+            )
+
+            pdf_file = generar_pdf_orden(
+                pedido,
+                detalle_orden
+            )
+
+            enviar_pdf_por_correo(
+                pedido["correo"],
+                pedido["nombre"],
+                pedido["id"],
+                pedido["fecha_entrega"],
+                pdf_file
+            )
+
+            st.success(
+                "✅ Correo enviado correctamente"
+            )
+                  
     with st.expander(
         "⚙️ Acciones"
     ):
 
-        if st.button(
-            "✏️ Editar Pedido"
-        ):
-            st.session_state["modo_edicion"] = True
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            if st.button(
+                "✏️ Editar Pedido"
+            ):
+                st.session_state["modo_edicion"] = True
+
+        with col2:
+
+            if st.button(
+                "❌ Anular Pedido"
+            ):
+
+                actualizar_status_orden(
+                    pedido_id,
+                    "Anulado"
+                )
+
+                st.success(
+                    "✅ Pedido anulado correctamente"
+                )
+
+                st.rerun()
 
         if st.session_state.get(
             "modo_edicion",
             False
         ):
+
+            st.divider()
 
             st.success(
                 f"✅ Editando Pedido #{pedido_id:04d}"
@@ -1164,7 +1342,7 @@ if pagina == "Consultas":
                     "✅ Cambios guardados"
                 )        
 
-    
+  
 if pagina == "Nueva Solicitud":
 
     st.subheader("Solicitud de Servicio de Bordado")
