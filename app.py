@@ -1033,6 +1033,28 @@ if pagina == "Consultas":
             index=False,
             sheet_name="Ordenes"
         )
+    worksheet = writer.sheets["Ordenes"]
+
+    for column in worksheet.columns:
+
+        max_length = 0
+
+        column_letter = column[0].column_letter
+
+        for cell in column:
+
+            try:
+
+                if len(str(cell.value)) > max_length:
+
+                    max_length = len(str(cell.value))
+
+            except:
+                pass
+
+        worksheet.column_dimensions[
+            column_letter
+        ].width = max_length + 2
 
     with open(
         excel_nombre,

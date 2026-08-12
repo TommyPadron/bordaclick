@@ -512,9 +512,15 @@ def obtener_ordenes():
     SELECT
         id,
         nombre,
+        telefono,
+        correo,
         colegio,
+        cantidad_total,
+        delivery,
+        zona_delivery,
         status,
         fecha_entrega,
+        abono,
         saldo_pendiente
     FROM ordenes
     ORDER BY id DESC
