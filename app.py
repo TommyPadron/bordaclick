@@ -1415,7 +1415,7 @@ if pagina == "Nueva Solicitud":
         "Nombre y Apellido",
         key="nombre"
     )
-
+    st.write(st.session_state)
     telefono = st.text_input(
         "Telefono / WhatsApp",
         key="telefono"
@@ -1817,22 +1817,22 @@ if pagina == "Nueva Solicitud":
             "✅ Solicitud guardada correctamente"
         )
         
-    if st.button(
-        "➕ Nueva Solicitud"
-    ):
+        if st.button(
+            "➕ Nueva Solicitud"
+        ):
 
-        st.session_state["solicitud_guardada"] = False
+            st.session_state["solicitud_guardada"] = False
 
-        if "nombre" in st.session_state:
-            del st.session_state["nombre"]
+            if "nombre" in st.session_state:
+                del st.session_state["nombre"]
 
-        if "telefono" in st.session_state:
-            del st.session_state["telefono"]
+            if "telefono" in st.session_state:
+                del st.session_state["telefono"]
 
-        if "correo" in st.session_state:
-            del st.session_state["correo"]
+            if "correo" in st.session_state:
+                del st.session_state["correo"]
 
-        st.rerun()        
+            st.rerun()        
    
 
 
