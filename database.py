@@ -1235,6 +1235,37 @@ def eliminar_detalle_orden(
     conn.commit()
 
     conn.close()
+def actualizar_finanzas_orden(
+    orden_id,
+    cantidad_total,
+    subtotal_bordado,
+    saldo_pendiente
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE ordenes
+        SET
+            cantidad_total = ?,
+            subtotal_bordado = ?,
+            saldo_pendiente = ?
+        WHERE id = ?
+        """,
+        (
+            cantidad_total,
+            subtotal_bordado,
+            saldo_pendiente,
+            orden_id
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
 
     
 

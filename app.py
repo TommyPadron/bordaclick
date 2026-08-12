@@ -63,7 +63,8 @@ from database import (
     enviar_notificacion_estado,
     contar_pedidos_pendientes,
     actualizar_orden,
-    eliminar_detalle_orden
+    eliminar_detalle_orden,
+    actualizar_finanzas_orden
 )          
 
 st.set_page_config(
@@ -1020,7 +1021,30 @@ if pagina == "Consultas":
         ),
         use_container_width=True
     )
+    excel_nombre = "Bordaclick_Ordenes.xlsx"
 
+    with pd.ExcelWriter(
+        excel_nombre,
+        engine="openpyxl"
+    ) as writer:
+
+        df_ordenes.to_excel(
+            writer,
+            index=False,
+            sheet_name="Ordenes"
+        )
+
+    with open(
+        excel_nombre,
+        "rb"
+    ) as archivo:
+
+        st.download_button(
+            "📊 Exportar Bordaclick Ordenes",
+            data=archivo,
+            file_name=excel_nombre,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
     pedido_id = st.selectbox(
         "Seleccione un pedido",
         df_ordenes["id"].tolist()
@@ -1378,10 +1402,65 @@ if pagina == "Consultas":
                 "Correo",
                 value=pedido["correo"]
             )
-            st.subheader("👕 Prendas")
-          
-            detalle_edit = st.data_editor(detalle_orden, num_rows="dynamic")          
+      
             
+            st.subheader("👕 Prendas")
+
+            lista_tipos_prenda = (
+                obtener_tipos_prenda()["nombre"]
+                .dropna()
+                .tolist()
+            )
+
+            lista_tallas = (
+                obtener_tallas()["nombre"]
+                .dropna()
+                .tolist()
+            )
+
+            lista_marcas = (
+                obtener_marcas()["nombre"]
+                .dropna()
+                .tolist()
+            )
+
+            lista_colores = (
+                obtener_colores()["nombre"]
+                .dropna()
+                .tolist()
+            )
+
+            columnas_edicion = {
+
+                "Tipo Prenda": st.column_config.SelectboxColumn(
+                    options=lista_tipos_prenda
+                ),
+
+                "Talla": st.column_config.SelectboxColumn(
+                    options=lista_tallas
+                ),
+
+                "Marca": st.column_config.SelectboxColumn(
+                    options=lista_marcas
+                ),
+
+                "Color": st.column_config.SelectboxColumn(
+                    options=lista_colores
+                ),
+
+                "Cantidad": st.column_config.NumberColumn(
+                    min_value=0,
+                    step=1
+                )
+            }
+
+            detalle_edit = st.data_editor(
+                detalle_orden,
+                num_rows="dynamic",
+                column_config=columnas_edicion,
+                use_container_width=True
+            )            
+ 
             if st.button(
                 "💾 Guardar Cambios"
             ):
@@ -1393,9 +1472,63 @@ if pagina == "Consultas":
                     correo_edit
                 )
 
-                st.success(
-                    "✅ Cambios guardados correctamente"
+                eliminar_detalle_orden(
+                    pedido_id
                 )
+
+                for _, fila in detalle_edit.iterrows():
+
+                    guardar_detalle(
+                        pedido_id,
+                        fila["Tipo Prenda"],
+                        fila["Talla"],
+                        fila["Marca"],
+                        fila["Color"],
+                        int(fila["Cantidad"])
+                    )
+
+                cantidad_total = int(
+                    detalle_edit["Cantidad"]
+                    .fillna(0)
+                    .sum()
+                )
+
+                subtotal_bordado = (
+                    cantidad_total
+                    *
+                    float(
+                        pedido["precio_bordado"]
+                    )
+                )
+
+                saldo_pendiente = (
+                    subtotal_bordado
+                    +
+                    float(
+                        pedido["subtotal_nombres"]
+                    )
+                    +
+                    float(
+                        pedido["delivery_costo"]
+                    )
+                    -
+                    float(
+                        pedido["abono"]
+                    )
+                )
+
+                actualizar_finanzas_orden(
+                    pedido_id,
+                    cantidad_total,
+                    subtotal_bordado,
+                    saldo_pendiente
+                )
+
+                st.success(
+                    "✅ Pedido actualizado correctamente"
+                )
+
+                st.rerun()            
 
   
 if pagina == "Nueva Solicitud":
