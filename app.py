@@ -1816,19 +1816,24 @@ if pagina == "Nueva Solicitud":
         st.success(
             "✅ Solicitud guardada correctamente"
         )
+        
     if st.button(
         "➕ Nueva Solicitud"
     ):
 
         st.session_state["solicitud_guardada"] = False
 
-        st.session_state["nombre"] = ""
-        st.session_state["telefono"] = ""
-        st.session_state["correo"] = ""
+        if "nombre" in st.session_state:
+            del st.session_state["nombre"]
 
-        st.rerun()
+        if "telefono" in st.session_state:
+            del st.session_state["telefono"]
 
-            
+        if "correo" in st.session_state:
+            del st.session_state["correo"]
+
+        st.rerun()        
+   
 
 
 
