@@ -62,6 +62,7 @@ from database import (
     obtener_costo_delivery,
     enviar_notificacion_estado,
     contar_pedidos_pendientes,
+    actualizar_orden
 )          
 
 st.set_page_config(
@@ -1376,13 +1377,20 @@ if pagina == "Consultas":
                 "Correo",
                 value=pedido["correo"]
             )
-
             if st.button(
                 "💾 Guardar Cambios"
             ):
+
+                actualizar_orden(
+                    pedido_id,
+                    nombre_edit,
+                    telefono_edit,
+                    correo_edit
+                )
+
                 st.success(
-                    "✅ Cambios guardados"
-                )        
+                    "✅ Cambios guardados correctamente"
+                )
 
   
 if pagina == "Nueva Solicitud":

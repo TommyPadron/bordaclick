@@ -1183,6 +1183,38 @@ def contar_pedidos_pendientes():
     conn.close()
 
     return total
+def actualizar_orden(
+    orden_id,
+    nombre,
+    telefono,
+    correo
+):
+
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE ordenes
+        SET
+            nombre = ?,
+            telefono = ?,
+            correo = ?
+        WHERE id = ?
+        """,
+        (
+            nombre,
+            telefono,
+            correo,
+            orden_id
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
 
     
 
