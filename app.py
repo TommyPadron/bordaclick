@@ -1412,7 +1412,7 @@ if pagina == "Nueva Solicitud":
 
     st.header("Datos del Cliente")
     nombre = st.text_input(
-        "Nombre y Apellido",
+        "PRUEBA NOMBRE",
         key="nombre"
     )
     st.write(st.session_state)
