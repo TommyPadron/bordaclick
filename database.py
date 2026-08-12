@@ -1117,38 +1117,24 @@ Gracias por confiar en Bordaclick.
 Bordaclick Diseños
 Sistema de Gestión de Bordados Escolares
 """
-
         else:
 
             mensaje["Subject"] = (
                 f"Bordaclick - Tu pedido #{orden_id:04d} está listo para ser retirado"
             )
-            cuerpo = f"""
-DEBUG DELIVERY: {delivery}
 
+            cuerpo = f"""
 Hola {nombre_cliente},
 
-Nos complace informarte que tu pedido #{orden_id:04d} ya está listo y será entregado mediante nuestro servicio de delivery.
+Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
 
-Nos pondremos en contacto contigo para coordinar la entrega.
+Puedes comunicarte con nosotros para coordinar el retiro de tu pedido.
 
 Gracias por confiar en Bordaclick.
 
 Bordaclick Diseños
 Sistema de Gestión de Bordados Escolares
 """
-#             cuerpo = f"""
-# Hola {nombre_cliente},
-
-# Nos complace informarte que tu pedido #{orden_id:04d} está listo para ser retirado.
-
-# Puedes comunicarte con nosotros para coordinar el retiro o la entrega de tu pedido.
-
-# Gracias por confiar en Bordaclick.
-
-# Bordaclick Diseños
-# Sistema de Gestión de Bordados Escolares
-# """
 
     else:
         return
