@@ -1425,7 +1425,7 @@ if pagina == "Nueva Solicitud":
         "Correo Electronico",
         key="correo"
     )
-    st.write(st.session_state)
+
 
     if telefono:
         if not re.match(r'^\d{10,}$', telefono):
