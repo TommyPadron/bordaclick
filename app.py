@@ -1757,7 +1757,6 @@ if pagina == "Nueva Solicitud":
             saldo_pendiente,
             status
         )
-
         for _, fila in df.iterrows():
 
             guardar_detalle(
@@ -1769,9 +1768,31 @@ if pagina == "Nueva Solicitud":
                 int(fila["Cantidad"])
             )
 
+        detalle_orden = obtener_detalle_orden(
+            orden_id
+        )
+
+        orden_generada = obtener_orden_por_id(
+            orden_id
+        )
+
+        pdf_file = generar_pdf_orden(
+            orden_generada,
+            detalle_orden
+        )
+
+        enviar_pdf_por_correo(
+            correo,
+            nombre,
+            orden_id,
+            fecha_entrega,
+            pdf_file
+        )
+
         st.session_state["solicitud_guardada"] = True
 
         st.rerun()
+
 
     if st.session_state["solicitud_guardada"]:
 
