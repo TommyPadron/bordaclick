@@ -927,7 +927,7 @@ def generar_excel_orden(
 
     for _, fila in detalle_orden.iterrows():
 
-        ws[f"A{fila_excel}"] = fila["Tipo_Prenda"]
+        ws[f"A{fila_excel}"] = fila["Tipo Prenda"]
         ws[f"B{fila_excel}"] = fila["Talla"]
         ws[f"C{fila_excel}"] = fila["Marca"]
         ws[f"D{fila_excel}"] = fila["Color"]
@@ -1153,18 +1153,21 @@ if pagina == "Consultas":
             min_value=0.0,
             step=1.0
         )
-
         if st.button(
             "💰 Registrar Pago"
         ):
 
+            if monto_pago > pedido["saldo_pendiente"]:
+
+                st.error(
+                    "❌ El pago no puede ser mayor al saldo pendiente."
+                )
+
+                st.stop()
+
             registrar_pago(
                 pedido_id,
                 monto_pago
-            )
-
-            st.success(
-                "✅ Pago registrado correctamente"
             )
 
             st.rerun()
