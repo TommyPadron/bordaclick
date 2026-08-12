@@ -1406,25 +1406,25 @@ if pagina == "Consultas":
             use_container_width=True
         )
     
-    if pagina == "Nueva Solicitud":
+if pagina == "Nueva Solicitud":
 
-        st.subheader("Solicitud de Servicio de Bordado")
+    st.subheader("Solicitud de Servicio de Bordado")
 
-        st.header("Datos del Cliente")
-        nombre = st.text_input(
-            "Nombre y Apellido",
-            key="nombre"
-        )
-        st.write(st.session_state)
-        telefono = st.text_input(
-            "Telefono / WhatsApp",
-            key="telefono"
-        )
+    st.header("Datos del Cliente")
+    nombre = st.text_input(
+        "Nombre y Apellido",
+        key="nombre"
+    )
+    st.write(st.session_state)
+    telefono = st.text_input(
+        "Telefono / WhatsApp",
+        key="telefono"
+    )
 
-        correo = st.text_input(
-            "Correo Electronico",
-            key="correo"
-        )
+    correo = st.text_input(
+        "Correo Electronico",
+        key="correo"
+    )
 
 
     if telefono:
