@@ -1010,10 +1010,30 @@ if pagina == "Consultas":
 
         return [""] * len(fila)
 
+    df_consulta = df_ordenes[
+        [
+            "id",
+            "nombre",
+            "colegio",
+            "status",
+            "fecha_entrega",
+            "saldo_pendiente"
+        ]
+    ].copy()
+
+    df_consulta.columns = [
+        "ID",
+        "Cliente",
+        "Colegio",
+        "Estado",
+        "Entrega",
+        "Saldo"
+    ]
+
     st.dataframe(
-        df_ordenes.style
+        df_consulta.style
         .format({
-            "saldo_pendiente": "${:.2f}"
+            "Saldo": "${:.2f}"
         })
         .apply(
             colorear_estado,
@@ -1021,6 +1041,19 @@ if pagina == "Consultas":
         ),
         use_container_width=True
     )
+
+
+    # st.dataframe(
+    #     df_ordenes.style
+    #     .format({
+    #         "saldo_pendiente": "${:.2f}"
+    #     })
+    #     .apply(
+    #         colorear_estado,
+    #         axis=1
+    #     ),
+    #     use_container_width=True
+    # )
     excel_nombre = "Bordaclick_Ordenes.xlsx"
 
     with pd.ExcelWriter(
@@ -1080,139 +1113,6 @@ if pagina == "Consultas":
         pedido_id
     )
 
-    # with st.expander(
-    #     "👤 Cliente",
-    #     expanded=True
-    # ):
-
-    #     st.write(
-    #         f"**Nombre:** {pedido['nombre']}"
-    #     )
-
-    #     st.write(
-    #         f"**Teléfono:** {pedido['telefono']}"
-    #     )
-
-    #     st.write(
-    #         f"**Correo:** {pedido['correo']}"
-    #     )
-
-    #     if "colegio" in pedido:
-    #         st.write(
-    #             f"**Colegio:** {pedido['colegio']}"
-    #         )
-
-    #     # ==========================================
-    #     # RESUMEN EJECUTIVO DEL PEDIDO
-    #     # ==========================================
-
-    #     st.divider()
-
-    #     estado = pedido.get("status", "Recibido")
-
-    #     if estado == "Recibido":
-    #         st.warning("🟡 Estado: Recibido")
-
-    #     elif estado == "En Producción":
-    #         st.info("🔵 Estado: En Producción")
-
-    #     elif estado == "Listo para Entrega":
-    #         st.success("🟢 Estado: Listo para Entrega")
-
-    #     elif estado == "Anulado":
-    #         st.error("🔴 Estado: Anulado")
-
-    #     else:
-    #         st.info(f"ℹ️ Estado: {estado}")
-
-    #     saldo = float(
-    #         pedido.get(
-    #             "saldo_pendiente",
-    #             0
-    #         )
-    #     )
-
-    #     abono = float(
-    #         pedido.get(
-    #             "abono",
-    #             0
-    #         )
-    #     )
-
-    #     total = saldo + abono
-
-    #     col1, col2, col3, col4, col5 = st.columns(5)
-
-    #     with col1:
-
-    #         st.metric(
-    #             "Pedido",
-    #             f"#{pedido['id']:04d}"
-    #         )
-
-    #     with col2:
-
-    #         st.metric(
-    #             "Saldo",
-    #             f"${saldo:.2f}"
-    #         )
-
-    #     with col3:
-
-    #         st.metric(
-    #             "Abono",
-    #             f"${abono:.2f}"
-    #         )
-
-    #     with col4:
-
-    #         st.metric(
-    #             "Total",
-    #             f"${total:.2f}"
-    #         )
-
-    #     with col5:
-
-    #         st.metric(
-    #             "Entrega",
-    #             str(
-    #                 pedido.get(
-    #                     "fecha_entrega",
-    #                     "N/A"
-    #                 )
-    #             )
-    #         )
-
-    #     if saldo <= 0:
-
-    #         st.success(
-    #             "💳 Estado Pago: ✅ Pagado"
-    #         )
-
-    #     else:
-
-    #         st.warning(
-    #             f"💳 Estado Pago: 🔴 Pendiente (${saldo:.2f})"
-    #         )
-
-    #     st.info(
-    #         f"👤 Cliente: {pedido['nombre']} | "
-    #         f"📞 {pedido['telefono']} | "
-    #         f"📧 {pedido['correo']} | "
-    #         f"🏫 {pedido.get('colegio','')}"
-    #     )
-
-    #     if pedido.get("delivery") != "No":
-
-    #         st.success(
-    #             f"🚚 Delivery: {pedido.get('delivery','Sí')}"
-    #         )
-
-    #     st.divider()       
-
-    # ==========================================
-    # RESUMEN EJECUTIVO DEL PEDIDO
-    # ==========================================
 
     st.divider()
 
