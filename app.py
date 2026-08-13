@@ -81,10 +81,9 @@ with col1:
         "Logo Bordaclick.JPG",
         width=120
     )
-
 with col2:
     st.title("🧵 Bordaclick")
-    st.caption("Sistema de Gestión de Bordados")
+    st.caption("Nueva Solicitud")
 
 st.divider()
 
