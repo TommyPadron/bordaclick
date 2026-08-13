@@ -74,22 +74,19 @@ st.set_page_config(
 )
 
 crear_bd()
+col1, col2 = st.columns([1, 4])
 
-st.image(
+with col1:
+    st.image(
+        "Logo Bordaclick.JPG",
+        width=120
+    )
 
-    "Logo Bordaclick.JPG",
-    width=250
-)
+with col2:
+    st.title("🧵 Bordaclick")
+    st.caption("Sistema de Gestión de Bordados")
 
-
-colegios = [
-    "San Ignacio",
-    "Colegio Don Bosco - Altamira",
-    "Colegio Simón Bolívar",
-    "IEA",
-    "Colegio Valle Abierto",
-    "Colegio Santiago de León"
-]
+st.divider()
 
 clave_admin = st.sidebar.text_input(
     "Clave Administrador",
@@ -997,7 +994,7 @@ if pagina == "Consultas":
 
     def colorear_estado(fila):
 
-        estado = fila["status"]
+        estado = fila["Estado"]
 
         if estado == "Recibido":
             return ["background-color: #fff3cd"] * len(fila)
@@ -1029,7 +1026,6 @@ if pagina == "Consultas":
         "Entrega",
         "Saldo"
     ]
-
     st.dataframe(
         df_consulta.style
         .format({
@@ -1039,14 +1035,13 @@ if pagina == "Consultas":
             colorear_estado,
             axis=1
         ),
+        hide_index=True,
         use_container_width=True
     )
-
-
     # st.dataframe(
-    #     df_ordenes.style
+    #     df_consulta.style
     #     .format({
-    #         "saldo_pendiente": "${:.2f}"
+    #         "Saldo": "${:.2f}"
     #     })
     #     .apply(
     #         colorear_estado,
@@ -1054,6 +1049,7 @@ if pagina == "Consultas":
     #     ),
     #     use_container_width=True
     # )
+
     excel_nombre = "Bordaclick_Ordenes.xlsx"
 
     with pd.ExcelWriter(
@@ -1863,7 +1859,7 @@ if pagina == "Nueva Solicitud":
     if bordar_nombre == "Sí":
 
         nombre_bordado = st.text_area(
-            "Indicar el nombre"
+            "Detalle del nombre a bordar Ejemplo:Miranda Guerrero detras de la capucha letras blancas,por cada prenda"
         )
 
         cantidad_nombre = st.number_input(
