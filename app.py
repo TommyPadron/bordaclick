@@ -1103,15 +1103,13 @@ if pagina == "Consultas":
     st.info(
         f"📦 Pedido seleccionado: #{pedido_id:04d}"
     )
-
     pedido = obtener_orden_por_id(
         pedido_id
     )
 
+    pedido = pedido.iloc[0]
 
-    st.divider()
-
-    estado = pedido.get("status", "Recibido")
+    estado = pedido["status"]
 
     if estado == "Recibido":
         st.warning("🟡 Estado: Recibido")
@@ -1579,15 +1577,15 @@ if pagina == "Consultas":
                 )
 
                 for _, fila in detalle_edit.iterrows():
-
                     guardar_detalle(
                         pedido_id,
+                        pedido["colegio"],
                         fila["Tipo Prenda"],
                         fila["Talla"],
                         fila["Marca"],
                         fila["Color"],
                         int(fila["Cantidad"])
-                    )
+                    )                    
 
                 cantidad_total = int(
                     detalle_edit["Cantidad"]

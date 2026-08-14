@@ -60,25 +60,27 @@ def crear_bd():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS orden_detalle (
 
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    orden_id INTEGER,
+        orden_id INTEGER,
 
-    tipo_prenda TEXT,
+        colegio TEXT,
 
-    talla TEXT,
+        tipo_prenda TEXT,
 
-    marca TEXT,
+        talla TEXT,
 
-    color TEXT,
+        marca TEXT,
 
-    cantidad INTEGER,
+        color TEXT,
 
-    FOREIGN KEY (orden_id)
-    REFERENCES ordenes(id)
+        cantidad INTEGER,
 
-    )
-    """)
+        FOREIGN KEY (orden_id)
+        REFERENCES ordenes(id)
+
+    )                   
+    """)                  
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS configuracion_bordados (
@@ -250,9 +252,9 @@ def guardar_orden(
     conn.close()
 
     return orden_id
-
 def guardar_detalle(
     orden_id,
+    colegio,
     tipo_prenda,
     talla,
     marca,
@@ -268,6 +270,7 @@ def guardar_detalle(
     INSERT INTO orden_detalle (
 
         orden_id,
+        colegio,
         tipo_prenda,
         talla,
         marca,
@@ -275,10 +278,11 @@ def guardar_detalle(
         cantidad
 
     )
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """,
     (
         orden_id,
+        colegio,
         tipo_prenda,
         talla,
         marca,
@@ -287,7 +291,9 @@ def guardar_detalle(
     ))
 
     conn.commit()
+
     conn.close()
+
 
 def obtener_precio_bordado(colegio):
 
@@ -555,12 +561,17 @@ def obtener_orden_por_id(orden_id):
 
     return df
 
-def obtener_detalle_orden(orden_id):
+def obtener_detalle_orden(
+    orden_id
+):
 
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect(
+        DATABASE
+    )
 
     query = f"""
     SELECT
+        colegio,
         tipo_prenda,
         talla,
         marca,
@@ -574,35 +585,21 @@ def obtener_detalle_orden(orden_id):
         query,
         conn
     )
+
     df.columns = [
+        "Colegio",
         "Tipo Prenda",
         "Talla",
         "Marca",
         "Color",
         "Cantidad"
     ]
+
     conn.close()
 
     return df
 
-def obtener_orden_por_id(pedido_id):
 
-    conn = sqlite3.connect(DATABASE)
-
-    query = f"""
-    SELECT *
-    FROM ordenes
-    WHERE id = {pedido_id}
-    """
-
-    df = pd.read_sql_query(
-        query,
-        conn
-    )
-
-    conn.close()
-
-    return df.iloc[0]
 
 def registrar_pago(
     orden_id,
@@ -1105,7 +1102,7 @@ Sistema de Gestión de Bordados Escolares
     elif estado == "Listo para Entrega":
 
         if "Sí" in str(delivery):
-        # if delivery == "Sí":
+       
 
             mensaje["Subject"] = (
                 f"Bordaclick - Tu pedido #{orden_id:04d} está listo para entrega"
@@ -1273,7 +1270,86 @@ def actualizar_finanzas_orden(
 
     conn.close()
     
-#prueba    
+def enviar_confirmacion_solicitud(
+    destinatario,
+    nombre_cliente,
+    orden_id,
+    fecha_entrega
+):
+
+    remitente = "bordaclick@gmail.com"
+    password = "niiv nskd qzox xwnr"
+
+    mensaje = MIMEMultipart()
+
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+
+    mensaje["Subject"] = (
+        f"Bordaclick - Solicitud Recibida #{orden_id:04d}"
+    )
+
+    cuerpo = f"""
+Hola {nombre_cliente},
+
+Gracias por confiar en Bordaclick.
+
+Hemos recibido correctamente tu solicitud.
+
+Número de Solicitud: #{orden_id:04d}
+
+Fecha estimada de entrega:
+{fecha_entrega}
+
+Nuestro equipo revisará tu solicitud y comenzará el proceso de producción.
+
+Recibirás una segunda notificación cuando tu Orden de Servicio esté lista.
+
+Gracias por elegir Bordaclick.
+
+Saludos,
+
+Equipo Bordaclick
+Bordados Escolares Personalizados
+"""
+
+    mensaje.attach(
+        MIMEText(
+            cuerpo,
+            "plain",
+            "utf-8"
+        )
+    )
+
+    servidor = smtplib.SMTP(
+        "smtp.gmail.com",
+        587
+    )
+
+    servidor.starttls()
+
+    try:
+
+        servidor.login(
+            remitente,
+            password
+        )
+
+        servidor.send_message(
+            mensaje
+        )
+
+        servidor.quit()
+
+    except Exception as e:
+
+        print(
+            f"❌ Error Gmail: {e}"
+        )
+
+        raise
+    
+   
 
     
 
