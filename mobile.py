@@ -34,7 +34,8 @@ st.set_page_config(
 
 if "paso" not in st.session_state:
     st.session_state.paso = 1
-    
+if "solicitud_enviada" not in st.session_state:
+    st.session_state.solicitud_enviada = False    
 if "colegios_agregados" not in st.session_state:
     st.session_state.colegios_agregados = []    
 
@@ -722,11 +723,14 @@ elif st.session_state.paso == 5:
         ):
             st.session_state.paso = 4
             st.rerun()
+
     with col2:
 
         if st.button(
             "✅ Confirmar Solicitud",
-            use_container_width=True
+            key="confirmar_solicitud_mobile",
+            use_container_width=True,
+            disabled=st.session_state.solicitud_enviada
         ):
 
             if len(st.session_state.colegios_agregados) > 1:
@@ -801,19 +805,36 @@ elif st.session_state.paso == 5:
                     fecha_entrega
                 )
 
-                st.success(
-                    f"✅ Pedido #{orden_id:04d} creado correctamente"
-                )
-
-                st.success(
-                    "📧 Correo de confirmación enviado."
-                )
-
             except Exception as e:
 
-                st.warning(
-                    f"Pedido guardado correctamente, "
-                    f"pero ocurrió un problema enviando el correo: {e}"
+                st.error(
+                    f"Error enviando correo: {e}"
                 )
 
+            st.session_state.solicitud_enviada = True
+            st.session_state.ultimo_pedido = orden_id
 
+            st.rerun()
+
+    if st.session_state.solicitud_enviada:
+
+        st.divider()
+
+        st.success(
+            f"✅ Pedido #{st.session_state.ultimo_pedido:04d} creado correctamente"
+        )
+
+        st.success(
+            "📧 Correo de confirmación enviado."
+        )
+
+        if st.button(
+            "➕ Nueva Solicitud",
+            key="nueva_solicitud_mobile",
+            use_container_width=True
+        ):
+
+            st.session_state.clear()
+
+            st.rerun()
+ 

@@ -2021,9 +2021,9 @@ if pagina == "Nueva Solicitud":
             status
         )
         for _, fila in df.iterrows():
-
             guardar_detalle(
                 orden_id,
+                colegio,
                 fila["Tipo Prenda"],
                 fila["Talla"],
                 fila["Marca"],
@@ -2034,10 +2034,11 @@ if pagina == "Nueva Solicitud":
         detalle_orden = obtener_detalle_orden(
             orden_id
         )
-
         orden_generada = obtener_orden_por_id(
             orden_id
         )
+
+        orden_generada = orden_generada.iloc[0]
 
         pdf_file = generar_pdf_orden(
             orden_generada,
