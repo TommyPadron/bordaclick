@@ -102,10 +102,14 @@ elif st.session_state.paso == 2:
     st.subheader("🏫 Colegio y Prendas")
 
     lista_colegios = (
+        ["Seleccione un colegio..."]
+        +
         obtener_colegios()["nombre"]
         .dropna()
         .tolist()
-    )
+    )    
+
+
 
     colegio = st.selectbox(
         "Seleccione el Colegio",
@@ -115,28 +119,33 @@ elif st.session_state.paso == 2:
     st.divider()
 
     lista_tipos_prenda = (
+        ["Seleccione una prenda..."]
+        +
         obtener_tipos_prenda()["nombre"]
         .dropna()
         .tolist()
     )
-
     lista_tallas = (
+        ["Seleccione una talla..."]
+        +
         obtener_tallas()["nombre"]
         .dropna()
         .tolist()
     )
-
     lista_marcas = (
+        ["Seleccione una marca..."]
+        +
         obtener_marcas()["nombre"]
         .dropna()
         .tolist()
     )
-
     lista_colores = (
+        ["Seleccione un color..."]
+        +
         obtener_colores()["nombre"]
         .dropna()
         .tolist()
-    )
+    )    
 
     st.subheader("👕 Agregar Prenda")
     tipo_prenda = st.selectbox(
@@ -174,73 +183,49 @@ elif st.session_state.paso == 2:
         use_container_width=True
     ):
 
-        st.session_state.prendas_actuales.append(
-            {
-                "tipo": tipo_prenda,
-                "talla": talla,
-                "marca": marca,
-                "color": color,
-                "cantidad": cantidad
-            }
-        )
+        if colegio == "Seleccione un colegio...":
 
-        # st.session_state.tipo_prenda_actual = (
-        #     lista_tipos_prenda[0]
-        # )
+            st.error(
+                "Debe seleccionar un colegio."
+            )
 
-        # st.session_state.talla_actual = (
-        #     lista_tallas[0]
-        # )
+        elif tipo_prenda == "Seleccione una prenda...":
 
-        # st.session_state.marca_actual = (
-        #     lista_marcas[0]
-        # )
+            st.error(
+                "Debe seleccionar un tipo de prenda."
+            )
 
-        # st.session_state.color_actual = (
-        #     lista_colores[0]
-        # )
+        elif talla == "Seleccione una talla...":
 
-        # st.session_state.cantidad_actual = 1
+            st.error(
+                "Debe seleccionar una talla."
+            )
 
-        st.rerun()
-    st.divider()
+        elif marca == "Seleccione una marca...":
 
-    st.subheader("📋 Prendas del Colegio")
+            st.error(
+                "Debe seleccionar una marca."
+            )
 
-    if len(st.session_state.prendas_actuales) == 0:
+        elif color == "Seleccione un color...":
 
-        st.info(
-            "Aún no hay prendas agregadas."
-        )
+            st.error(
+                "Debe seleccionar un color."
+            )
 
-    else:
+        else:
 
-        for i, prenda in enumerate(
-            st.session_state.prendas_actuales
-        ):
+            st.session_state.prendas_actuales.append(
+                {
+                    "tipo": tipo_prenda,
+                    "talla": talla,
+                    "marca": marca,
+                    "color": color,
+                    "cantidad": cantidad
+                }
+            )
 
-            col1, col2 = st.columns([5,1])
-
-            with col1:
-
-                st.success(
-                    f"👕 {prenda['tipo']} | "
-                    f"📏 {prenda['talla']} | "
-                    f"🏷️ {prenda['marca']} | "
-                    f"🎨 {prenda['color']} | "
-                    f"🔢 {prenda['cantidad']}"
-                )
-
-            with col2:
-
-                if st.button(
-                    "🗑️",
-                    key=f"eliminar_{i}"
-                ):
-                    st.session_state.prendas_actuales.pop(i)
-                    st.rerun()
-
-    st.divider()
+            st.rerun()
 
     if st.button(
         "💾 Guardar Colegio",
@@ -254,7 +239,6 @@ elif st.session_state.paso == 2:
             )
 
         else:
-
             st.session_state.colegios_agregados.append(
                 {
                     "colegio": colegio,
@@ -268,9 +252,29 @@ elif st.session_state.paso == 2:
                 "✅ Colegio guardado correctamente"
             )
 
-            st.rerun()
+            st.rerun()            
+    #         st.session_state.colegios_agregados.append(
+    #             {
+    #                 "colegio": colegio,
+    #                 "prendas": st.session_state.prendas_actuales.copy()
+    #             }
+    #         )
 
-    st.divider()
+    #         st.session_state.prendas_actuales = []
+
+    #         st.session_state.tipo_prenda_actual = "Seleccione una prenda..."
+    #         st.session_state.talla_actual = "Seleccione una talla..."
+    #         st.session_state.marca_actual = "Seleccione una marca..."
+    #         st.session_state.color_actual = "Seleccione un color..."
+    #         st.session_state.cantidad_actual = 1
+
+    #         st.success(
+    #             "✅ Colegio guardado correctamente"
+    #         )
+
+    #         st.rerun()
+
+    # st.divider()
 
     st.subheader("🏫 Colegios Agregados")
 
@@ -328,15 +332,16 @@ elif st.session_state.paso == 2:
                 st.session_state.paso = 3
 
                 st.rerun()
+                
 # ==========================================
 # PASO 3
 # ==========================================
 
 elif st.session_state.paso == 3:
 
-    st.progress(60)
+    st.progress(75)
 
-    st.subheader("🧵 Bordado")
+    st.subheader("🧵 Bordado y Delivery")
 
     tipo_logo = st.selectbox(
         "Tipo de Logo",
@@ -390,53 +395,7 @@ elif st.session_state.paso == 3:
                 f"No puede bordar nombres en más de {total_prendas} prendas."
             )
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        if st.button(
-            "⬅️ Atrás",
-            use_container_width=True
-        ):
-            st.session_state.paso = 2
-            st.rerun()
-
-    with col2:
-
-        if st.button(
-            "Continuar ➡️",
-            use_container_width=True
-        ):
-
-            if (
-                bordar_nombre == "Sí"
-                and cantidad_nombre > total_prendas
-            ):
-
-                st.error(
-                    f"No puede bordar nombres en más de {total_prendas} prendas."
-                )
-
-            else:
-
-                st.session_state.tipo_logo = tipo_logo
-
-                st.session_state.bordar_nombre = bordar_nombre
-
-                st.session_state.nombre_bordado = nombre_bordado
-
-                st.session_state.cantidad_nombre = cantidad_nombre
-
-                st.session_state.paso = 4
-
-                st.rerun()
-# ==========================================
-# PASO 4
-# ==========================================
-
-elif st.session_state.paso == 4:
-
-    st.progress(80)
+    st.divider()
 
     st.subheader("🚚 Delivery")
 
@@ -449,10 +408,11 @@ elif st.session_state.paso == 4:
     )
 
     zona_delivery = ""
+
     costo_delivery = 0
 
     if delivery == "Sí":
-        
+
         lista_zonas = (
             obtener_zonas_delivery()["nombre"]
             .dropna()
@@ -494,7 +454,7 @@ elif st.session_state.paso == 4:
             "⬅️ Atrás",
             use_container_width=True
         ):
-            st.session_state.paso = 3
+            st.session_state.paso = 2
             st.rerun()
 
     with col2:
@@ -504,13 +464,35 @@ elif st.session_state.paso == 4:
             use_container_width=True
         ):
 
-            st.session_state.delivery = delivery
-            st.session_state.zona_delivery = zona_delivery
-            st.session_state.costo_delivery = costo_delivery
+            if (
+                bordar_nombre == "Sí"
+                and cantidad_nombre > total_prendas
+            ):
 
-            st.session_state.paso = 5
+                st.error(
+                    f"No puede bordar nombres en más de {total_prendas} prendas."
+                )
 
-            st.rerun()
+            else:
+
+                st.session_state.tipo_logo = tipo_logo
+
+                st.session_state.bordar_nombre = bordar_nombre
+
+                st.session_state.nombre_bordado = nombre_bordado
+
+                st.session_state.cantidad_nombre = cantidad_nombre
+
+                st.session_state.delivery = delivery
+
+                st.session_state.zona_delivery = zona_delivery
+
+                st.session_state.costo_delivery = costo_delivery
+
+                st.session_state.paso = 5
+
+                st.rerun()                
+
 
 # ==========================================
 # PASO 5
@@ -815,26 +797,31 @@ elif st.session_state.paso == 5:
             st.session_state.ultimo_pedido = orden_id
 
             st.rerun()
+        if st.session_state.solicitud_enviada:
 
-    if st.session_state.solicitud_enviada:
+            st.empty()
 
-        st.divider()
+            st.success(
+                f"✅ Pedido #{st.session_state.ultimo_pedido:04d} creado correctamente"
+            )
 
-        st.success(
-            f"✅ Pedido #{st.session_state.ultimo_pedido:04d} creado correctamente"
-        )
+            st.success(
+                "📧 Correo de confirmación enviado."
+            )
 
-        st.success(
-            "📧 Correo de confirmación enviado."
-        )
+            st.info(
+                "Tu solicitud fue recibida correctamente y será revisada por nuestro equipo."
+            )
 
-        if st.button(
-            "➕ Nueva Solicitud",
-            key="nueva_solicitud_mobile",
-            use_container_width=True
-        ):
+            if st.button(
+                "➕ Nueva Solicitud",
+                key="nueva_solicitud_mobile",
+                use_container_width=True
+            ):
 
-            st.session_state.clear()
+                st.session_state.clear()
 
-            st.rerun()
+                st.rerun()
+            st.stop()
+
  
