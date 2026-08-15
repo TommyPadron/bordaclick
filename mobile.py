@@ -78,22 +78,40 @@ if st.session_state.paso == 1:
     correo = st.text_input(
         "Correo Electrónico"
     )
-
     if st.button(
         "Continuar ➡️",
         use_container_width=True
     ):
 
-        st.session_state.nombre = nombre
-        st.session_state.telefono = telefono
-        st.session_state.correo = correo
+        if nombre == "":
 
-        st.session_state.paso = 2
+            st.error(
+                "Debe ingresar el nombre."
+            )
 
-        st.rerun()
-# ==========================================
-# PASO 2
-# ==========================================
+        elif telefono == "":
+
+            st.error(
+                "Debe ingresar el teléfono."
+            )
+
+        elif correo == "":
+
+            st.error(
+                "Debe ingresar el correo electrónico."
+            )
+
+        else:
+
+            st.session_state.nombre = nombre
+
+            st.session_state.telefono = telefono
+
+            st.session_state.correo = correo
+
+            st.session_state.paso = 2
+
+            st.rerun()
 
 elif st.session_state.paso == 2:
 
@@ -108,9 +126,6 @@ elif st.session_state.paso == 2:
         .dropna()
         .tolist()
     )    
-
-
-
     colegio = st.selectbox(
         "Seleccione el Colegio",
         lista_colegios
@@ -146,23 +161,26 @@ elif st.session_state.paso == 2:
         .dropna()
         .tolist()
     )    
-
     st.subheader("👕 Agregar Prenda")
+
     tipo_prenda = st.selectbox(
         "Tipo de Prenda",
         lista_tipos_prenda,
         key="tipo_prenda_actual"
     )
+
     talla = st.selectbox(
         "Talla",
         lista_tallas,
         key="talla_actual"
     )
+
     marca = st.selectbox(
         "Marca",
         lista_marcas,
         key="marca_actual"
     )
+
     color = st.selectbox(
         "Color",
         lista_colores,
@@ -178,6 +196,7 @@ elif st.session_state.paso == 2:
 
     if "prendas_actuales" not in st.session_state:
         st.session_state.prendas_actuales = []
+
     if st.button(
         "➕ Agregar Prenda",
         use_container_width=True
@@ -227,6 +246,47 @@ elif st.session_state.paso == 2:
 
             st.rerun()
 
+    st.divider()
+
+    st.subheader("📋Revise las prendas agregadas antes de guardar el colegio.")
+
+    if len(st.session_state.prendas_actuales) == 0:
+
+        st.info(
+            "Aún no hay prendas agregadas."
+        )
+
+    else:
+
+        for i, prenda in enumerate(
+            st.session_state.prendas_actuales
+        ):
+
+            col1, col2 = st.columns([5, 1])
+
+            with col1:
+
+                st.success(
+                    f"👕 {prenda['tipo']} | "
+                    f"📏 {prenda['talla']} | "
+                    f"🏷️ {prenda['marca']} | "
+                    f"🎨 {prenda['color']} | "
+                    f"🔢 {prenda['cantidad']}"
+                )
+
+            with col2:
+
+                if st.button(
+                    "🗑️",
+                    key=f"borrar_prenda_{i}"
+                ):
+
+                    st.session_state.prendas_actuales.pop(i)
+
+                    st.rerun()
+
+    st.divider()
+
     if st.button(
         "💾 Guardar Colegio",
         use_container_width=True
@@ -253,28 +313,6 @@ elif st.session_state.paso == 2:
             )
 
             st.rerun()            
-    #         st.session_state.colegios_agregados.append(
-    #             {
-    #                 "colegio": colegio,
-    #                 "prendas": st.session_state.prendas_actuales.copy()
-    #             }
-    #         )
-
-    #         st.session_state.prendas_actuales = []
-
-    #         st.session_state.tipo_prenda_actual = "Seleccione una prenda..."
-    #         st.session_state.talla_actual = "Seleccione una talla..."
-    #         st.session_state.marca_actual = "Seleccione una marca..."
-    #         st.session_state.color_actual = "Seleccione un color..."
-    #         st.session_state.cantidad_actual = 1
-
-    #         st.success(
-    #             "✅ Colegio guardado correctamente"
-    #         )
-
-    #         st.rerun()
-
-    # st.divider()
 
     st.subheader("🏫 Colegios Agregados")
 
@@ -318,6 +356,12 @@ elif st.session_state.paso == 2:
             "Continuar ➡️",
             use_container_width=True
         ):
+
+
+        # if st.button(
+        #     "Continuar ➡️",
+        #     use_container_width=True
+        # ):
 
             if len(
                 st.session_state.colegios_agregados
@@ -516,26 +560,8 @@ elif st.session_state.paso == 5:
         f"📧 {st.session_state.correo}"
     )
 
-    st.divider()
-
-    st.subheader("🏫 Colegios y Prendas")
-
-    for colegio_data in st.session_state.colegios_agregados:
-
-        st.success(
-            f"🏫 {colegio_data['colegio']}"
-        )
-
-        for prenda in colegio_data["prendas"]:
-
-            st.write(
-                f"• {prenda['tipo']} | "
-                f"{prenda['talla']} | "
-                f"{prenda['cantidad']}"
-            )
-
-    st.divider()
-
+#    st.divider()
+    st.progress(100)
     st.subheader("🧵 Bordado")
 
     st.write(
@@ -555,9 +581,6 @@ elif st.session_state.paso == 5:
         st.write(
             f"Cantidad: {st.session_state.cantidad_nombre}"
         )
-
-    st.divider()
-
     dias_produccion = int(
         obtener_parametro(
             "dias_produccion"
@@ -568,41 +591,15 @@ elif st.session_state.paso == 5:
         date.today() +
         timedelta(days=dias_produccion)
     )
-
-    st.subheader("📅 Entrega")
-
-    st.info(
-        f"Fecha estimada de entrega: "
-        f"{fecha_entrega.strftime('%d/%m/%Y')}"
-    )
-
-    st.divider()
-
-    st.subheader("🚚 Delivery")
-
-    st.write(
-        f"Delivery: {st.session_state.delivery}"
-    )
-
-    if st.session_state.delivery == "Sí":
-
-        st.write(
-            f"Zona: {st.session_state.zona_delivery}"
-        )
-
-        st.write(
-            f"Costo: ${st.session_state.costo_delivery:.2f}"
-        )
-
-    else:
-
-        st.info(
-            "📍 Retiro en tienda"
-        )
-
-    st.divider()
+    st.progress(100)
+#    st.divider()
 
     st.subheader("💰 Resumen Financiero")
+
+    st.write(
+        f"📅 Entrega: "
+        f"{fecha_entrega.strftime('%d/%m/%Y')}"
+    )
 
     subtotal_bordado = 0
 

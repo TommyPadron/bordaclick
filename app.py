@@ -2078,7 +2078,7 @@ if pagina == "Nueva Solicitud":
                 del st.session_state["correo"]
 
             st.rerun()
-#pueba            
+            
 
 
 
