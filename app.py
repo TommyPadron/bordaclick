@@ -2077,13 +2077,4 @@ if pagina == "Nueva Solicitud":
             if "correo" in st.session_state:
                 del st.session_state["correo"]
 
-            st.rerun()
-            
-
-
-
-
-
-
-    
-
+            st.rerun()    
