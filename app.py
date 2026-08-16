@@ -11,7 +11,10 @@ from openpyxl.styles import Alignment
 from openpyxl.styles import PatternFill
 from openpyxl.styles import Font
 from openpyxl.styles import Border, Side
-from pdf_utils import generar_pdf_orden
+from pdf_utils import (
+    generar_pdf_orden,
+    generar_excel_orden
+)
 
 from openpyxl import Workbook
 from datetime import date,timedelta
@@ -917,22 +920,52 @@ def generar_excel_orden(
 
     ws["A27"].font = titulo
 
-    ws["A28"] = "Tipo Prenda"
-    ws["B28"] = "Talla"
-    ws["C28"] = "Marca"
-    ws["D28"] = "Color"
-    ws["E28"] = "Cantidad"
-    fila_excel = 29
+    fila_excel = 28
 
-    for _, fila in detalle_orden.iterrows():
+    for colegio in detalle_orden["Colegio"].unique():
 
-        ws[f"A{fila_excel}"] = fila["Tipo Prenda"]
-        ws[f"B{fila_excel}"] = fila["Talla"]
-        ws[f"C{fila_excel}"] = fila["Marca"]
-        ws[f"D{fila_excel}"] = fila["Color"]
-        ws[f"E{fila_excel}"] = fila["Cantidad"]
+        ws[f"A{fila_excel}"] = f"🏫 {colegio}"
+        ws[f"A{fila_excel}"].font = titulo
 
         fila_excel += 1
+
+        ws[f"A{fila_excel}"] = "Tipo Prenda"
+        ws[f"B{fila_excel}"] = "Talla"
+        ws[f"C{fila_excel}"] = "Marca"
+        ws[f"D{fila_excel}"] = "Color"
+        ws[f"E{fila_excel}"] = "Cantidad"
+
+        ws[f"A{fila_excel}"].font = encabezado_tabla
+        ws[f"B{fila_excel}"].font = encabezado_tabla
+        ws[f"C{fila_excel}"].font = encabezado_tabla
+        ws[f"D{fila_excel}"].font = encabezado_tabla
+        ws[f"E{fila_excel}"].font = encabezado_tabla
+
+        ws[f"A{fila_excel}"].fill = fondo_gris
+        ws[f"B{fila_excel}"].fill = fondo_gris
+        ws[f"C{fila_excel}"].fill = fondo_gris
+        ws[f"D{fila_excel}"].fill = fondo_gris
+        ws[f"E{fila_excel}"].fill = fondo_gris
+
+        fila_excel += 1
+
+        df_colegio = detalle_orden[
+            detalle_orden["Colegio"] == colegio
+        ]
+
+        for _, fila in df_colegio.iterrows():
+
+            ws[f"A{fila_excel}"] = fila["Tipo Prenda"]
+            ws[f"B{fila_excel}"] = fila["Talla"]
+            ws[f"C{fila_excel}"] = fila["Marca"]
+            ws[f"D{fila_excel}"] = fila["Color"]
+            ws[f"E{fila_excel}"] = fila["Cantidad"]
+
+            fila_excel += 1
+
+        fila_excel += 1
+
+ 
     encabezado_tabla = Font(
         bold=True
     )
@@ -1037,17 +1070,6 @@ if pagina == "Consultas":
         hide_index=True,
         use_container_width=True
     )
-    # st.dataframe(
-    #     df_consulta.style
-    #     .format({
-    #         "Saldo": "${:.2f}"
-    #     })
-    #     .apply(
-    #         colorear_estado,
-    #         axis=1
-    #     ),
-    #     use_container_width=True
-    # )
 
     excel_nombre = "Bordaclick_Ordenes.xlsx"
 

@@ -1,5 +1,5 @@
 import streamlit as st
-
+import pandas as pd
 from datetime import (
     date,
     timedelta
@@ -20,10 +20,16 @@ from database import (
     obtener_orden_por_id,
     obtener_detalle_orden,
     enviar_pdf_por_correo,
-    enviar_confirmacion_solicitud
+    enviar_confirmacion_solicitud,
+    obtener_ordenes,
+    registrar_pago,
+    actualizar_status_orden,
+    enviar_notificacion_estado
+    )
+from pdf_utils import (
+    generar_pdf_orden,
+    generar_excel_orden
 )
-from pdf_utils import generar_pdf_orden
-
 
 
 st.set_page_config(
@@ -32,12 +38,36 @@ st.set_page_config(
     layout="centered"
 )
 
+clave_admin = st.sidebar.text_input(
+    "Clave Administrador",
+    type="password"
+)
+
+opciones_menu = [
+    "📝 Nueva Solicitud"
+]
+
+if clave_admin == "BordaAdmin2026*":
+
+    opciones_menu.append(
+        "📋 Consultas"
+    )
+
+pagina = st.sidebar.selectbox(
+    "Menú",
+    opciones_menu
+)
+
 if "paso" not in st.session_state:
     st.session_state.paso = 1
+
 if "solicitud_enviada" not in st.session_state:
-    st.session_state.solicitud_enviada = False    
+    st.session_state.solicitud_enviada = False
+
 if "colegios_agregados" not in st.session_state:
-    st.session_state.colegios_agregados = []    
+    st.session_state.colegios_agregados = []
+
+
 
 # ==========================================
 # ENCABEZADO
@@ -57,325 +87,327 @@ with col2:
 
 st.divider()
 
+if pagina == "📝 Nueva Solicitud":
 # ==========================================
 # PASO 1
 # ==========================================
 
-if st.session_state.paso == 1:
 
-    st.progress(20)
+    if st.session_state.paso == 1:
 
-    st.subheader("👤 Datos del Cliente")
+        st.progress(20)
 
-    nombre = st.text_input(
-        "Nombre y Apellido"
-    )
+        st.subheader("👤 Datos del Cliente")
 
-    telefono = st.text_input(
-        "Teléfono"
-    )
-
-    correo = st.text_input(
-        "Correo Electrónico"
-    )
-    if st.button(
-        "Continuar ➡️",
-        use_container_width=True
-    ):
-
-        if nombre == "":
-
-            st.error(
-                "Debe ingresar el nombre."
-            )
-
-        elif telefono == "":
-
-            st.error(
-                "Debe ingresar el teléfono."
-            )
-
-        elif correo == "":
-
-            st.error(
-                "Debe ingresar el correo electrónico."
-            )
-
-        else:
-
-            st.session_state.nombre = nombre
-
-            st.session_state.telefono = telefono
-
-            st.session_state.correo = correo
-
-            st.session_state.paso = 2
-
-            st.rerun()
-
-elif st.session_state.paso == 2:
-
-    st.progress(40)
-
-    st.subheader("🏫 Colegio y Prendas")
-
-    lista_colegios = (
-        ["Seleccione un colegio..."]
-        +
-        obtener_colegios()["nombre"]
-        .dropna()
-        .tolist()
-    )    
-    colegio = st.selectbox(
-        "Seleccione el Colegio",
-        lista_colegios
-    )
-
-    st.divider()
-
-    lista_tipos_prenda = (
-        ["Seleccione una prenda..."]
-        +
-        obtener_tipos_prenda()["nombre"]
-        .dropna()
-        .tolist()
-    )
-    lista_tallas = (
-        ["Seleccione una talla..."]
-        +
-        obtener_tallas()["nombre"]
-        .dropna()
-        .tolist()
-    )
-    lista_marcas = (
-        ["Seleccione una marca..."]
-        +
-        obtener_marcas()["nombre"]
-        .dropna()
-        .tolist()
-    )
-    lista_colores = (
-        ["Seleccione un color..."]
-        +
-        obtener_colores()["nombre"]
-        .dropna()
-        .tolist()
-    )    
-    st.subheader("👕 Agregar Prenda")
-
-    tipo_prenda = st.selectbox(
-        "Tipo de Prenda",
-        lista_tipos_prenda,
-        key="tipo_prenda_actual"
-    )
-
-    talla = st.selectbox(
-        "Talla",
-        lista_tallas,
-        key="talla_actual"
-    )
-
-    marca = st.selectbox(
-        "Marca",
-        lista_marcas,
-        key="marca_actual"
-    )
-
-    color = st.selectbox(
-        "Color",
-        lista_colores,
-        key="color_actual"
-    )
-
-    cantidad = st.number_input(
-        "Cantidad",
-        min_value=1,
-        value=1,
-        key="cantidad_actual"
-    )
-
-    if "prendas_actuales" not in st.session_state:
-        st.session_state.prendas_actuales = []
-
-    if st.button(
-        "➕ Agregar Prenda",
-        use_container_width=True
-    ):
-
-        if colegio == "Seleccione un colegio...":
-
-            st.error(
-                "Debe seleccionar un colegio."
-            )
-
-        elif tipo_prenda == "Seleccione una prenda...":
-
-            st.error(
-                "Debe seleccionar un tipo de prenda."
-            )
-
-        elif talla == "Seleccione una talla...":
-
-            st.error(
-                "Debe seleccionar una talla."
-            )
-
-        elif marca == "Seleccione una marca...":
-
-            st.error(
-                "Debe seleccionar una marca."
-            )
-
-        elif color == "Seleccione un color...":
-
-            st.error(
-                "Debe seleccionar un color."
-            )
-
-        else:
-
-            st.session_state.prendas_actuales.append(
-                {
-                    "tipo": tipo_prenda,
-                    "talla": talla,
-                    "marca": marca,
-                    "color": color,
-                    "cantidad": cantidad
-                }
-            )
-
-            st.rerun()
-
-    st.divider()
-
-    st.subheader("📋Revise las prendas agregadas antes de guardar el colegio.")
-
-    if len(st.session_state.prendas_actuales) == 0:
-
-        st.info(
-            "Aún no hay prendas agregadas."
+        nombre = st.text_input(
+            "Nombre y Apellido"
         )
 
-    else:
-
-        for i, prenda in enumerate(
-            st.session_state.prendas_actuales
-        ):
-
-            col1, col2 = st.columns([5, 1])
-
-            with col1:
-
-                st.success(
-                    f"👕 {prenda['tipo']} | "
-                    f"📏 {prenda['talla']} | "
-                    f"🏷️ {prenda['marca']} | "
-                    f"🎨 {prenda['color']} | "
-                    f"🔢 {prenda['cantidad']}"
-                )
-
-            with col2:
-
-                if st.button(
-                    "🗑️",
-                    key=f"borrar_prenda_{i}"
-                ):
-
-                    st.session_state.prendas_actuales.pop(i)
-
-                    st.rerun()
-
-    st.divider()
-
-    if st.button(
-        "💾 Guardar Colegio",
-        use_container_width=True
-    ):
-
-        if len(st.session_state.prendas_actuales) == 0:
-
-            st.error(
-                "Debe agregar al menos una prenda."
-            )
-
-        else:
-            st.session_state.colegios_agregados.append(
-                {
-                    "colegio": colegio,
-                    "prendas": st.session_state.prendas_actuales.copy()
-                }
-            )
-
-            st.session_state.prendas_actuales = []
-
-            st.success(
-                "✅ Colegio guardado correctamente"
-            )
-
-            st.rerun()            
-
-    st.subheader("🏫 Colegios Agregados")
-
-    if len(st.session_state.colegios_agregados) == 0:
-
-        st.info(
-            "Aún no hay colegios guardados."
+        telefono = st.text_input(
+            "Teléfono"
         )
 
-    else:
-
-        for colegio_data in st.session_state.colegios_agregados:
-
-            st.success(
-                f"🏫 {colegio_data['colegio']}"
-            )
-
-            for prenda in colegio_data["prendas"]:
-
-                st.write(
-                    f"• {prenda['tipo']} "
-                    f"({prenda['talla']}) "
-                    f"x {prenda['cantidad']}"
-                )
-
-    st.divider()
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        if st.button(
-            "➕ Agregar Otro Colegio",
-            use_container_width=True
-        ):
-            st.rerun()
-
-    with col2:
-
+        correo = st.text_input(
+            "Correo Electrónico"
+        )
         if st.button(
             "Continuar ➡️",
             use_container_width=True
         ):
 
-
-        # if st.button(
-        #     "Continuar ➡️",
-        #     use_container_width=True
-        # ):
-
-            if len(
-                st.session_state.colegios_agregados
-            ) == 0:
+            if nombre == "":
 
                 st.error(
-                    "Debe guardar al menos un colegio."
+                    "Debe ingresar el nombre."
+                )
+
+            elif telefono == "":
+
+                st.error(
+                    "Debe ingresar el teléfono."
+                )
+
+            elif correo == "":
+
+                st.error(
+                    "Debe ingresar el correo electrónico."
                 )
 
             else:
 
-                st.session_state.paso = 3
+                st.session_state.nombre = nombre
+
+                st.session_state.telefono = telefono
+
+                st.session_state.correo = correo
+
+                st.session_state.paso = 2
 
                 st.rerun()
+
+    elif st.session_state.paso == 2:
+
+        st.progress(40)
+
+        st.subheader("🏫 Colegio y Prendas")
+
+        lista_colegios = (
+            ["Seleccione un colegio..."]
+            +
+            obtener_colegios()["nombre"]
+            .dropna()
+            .tolist()
+        )    
+        colegio = st.selectbox(
+            "Seleccione el Colegio",
+            lista_colegios
+        )
+
+        st.divider()
+
+        lista_tipos_prenda = (
+            ["Seleccione una prenda..."]
+            +
+            obtener_tipos_prenda()["nombre"]
+            .dropna()
+            .tolist()
+        )
+        lista_tallas = (
+            ["Seleccione una talla..."]
+            +
+            obtener_tallas()["nombre"]
+            .dropna()
+            .tolist()
+        )
+        lista_marcas = (
+            ["Seleccione una marca..."]
+            +
+            obtener_marcas()["nombre"]
+            .dropna()
+            .tolist()
+        )
+        lista_colores = (
+            ["Seleccione un color..."]
+            +
+            obtener_colores()["nombre"]
+            .dropna()
+            .tolist()
+        )    
+        st.subheader("👕 Agregar Prenda")
+
+        tipo_prenda = st.selectbox(
+            "Tipo de Prenda",
+            lista_tipos_prenda,
+            key="tipo_prenda_actual"
+        )
+
+        talla = st.selectbox(
+            "Talla",
+            lista_tallas,
+            key="talla_actual"
+        )
+
+        marca = st.selectbox(
+            "Marca",
+            lista_marcas,
+            key="marca_actual"
+        )
+
+        color = st.selectbox(
+            "Color",
+            lista_colores,
+            key="color_actual"
+        )
+
+        cantidad = st.number_input(
+            "Cantidad",
+            min_value=1,
+            value=1,
+            key="cantidad_actual"
+        )
+
+        if "prendas_actuales" not in st.session_state:
+            st.session_state.prendas_actuales = []
+
+        if st.button(
+            "➕ Agregar Prenda",
+            use_container_width=True
+        ):
+
+            if colegio == "Seleccione un colegio...":
+
+                st.error(
+                    "Debe seleccionar un colegio."
+                )
+
+            elif tipo_prenda == "Seleccione una prenda...":
+
+                st.error(
+                    "Debe seleccionar un tipo de prenda."
+                )
+
+            elif talla == "Seleccione una talla...":
+
+                st.error(
+                    "Debe seleccionar una talla."
+                )
+
+            elif marca == "Seleccione una marca...":
+
+                st.error(
+                    "Debe seleccionar una marca."
+                )
+
+            elif color == "Seleccione un color...":
+
+                st.error(
+                    "Debe seleccionar un color."
+                )
+
+            else:
+
+                st.session_state.prendas_actuales.append(
+                    {
+                        "tipo": tipo_prenda,
+                        "talla": talla,
+                        "marca": marca,
+                        "color": color,
+                        "cantidad": cantidad
+                    }
+                )
+
+                st.rerun()
+
+        st.divider()
+
+        st.subheader("📋Revise las prendas agregadas antes de guardar el colegio.")
+
+        if len(st.session_state.prendas_actuales) == 0:
+
+            st.info(
+                "Aún no hay prendas agregadas."
+            )
+
+        else:
+
+            for i, prenda in enumerate(
+                st.session_state.prendas_actuales
+            ):
+
+                col1, col2 = st.columns([5, 1])
+
+                with col1:
+
+                    st.success(
+                        f"👕 {prenda['tipo']} | "
+                        f"📏 {prenda['talla']} | "
+                        f"🏷️ {prenda['marca']} | "
+                        f"🎨 {prenda['color']} | "
+                        f"🔢 {prenda['cantidad']}"
+                    )
+
+                with col2:
+
+                    if st.button(
+                        "🗑️",
+                        key=f"borrar_prenda_{i}"
+                    ):
+
+                        st.session_state.prendas_actuales.pop(i)
+
+                        st.rerun()
+
+        st.divider()
+
+        if st.button(
+            "💾 Guardar Colegio",
+            use_container_width=True
+        ):
+
+            if len(st.session_state.prendas_actuales) == 0:
+
+                st.error(
+                    "Debe agregar al menos una prenda."
+                )
+
+            else:
+                st.session_state.colegios_agregados.append(
+                    {
+                        "colegio": colegio,
+                        "prendas": st.session_state.prendas_actuales.copy()
+                    }
+                )
+
+                st.session_state.prendas_actuales = []
+
+                st.success(
+                    "✅ Colegio guardado correctamente"
+                )
+
+                st.rerun()            
+
+        st.subheader("🏫 Colegios Agregados")
+
+        if len(st.session_state.colegios_agregados) == 0:
+
+            st.info(
+                "Aún no hay colegios guardados."
+            )
+
+        else:
+
+            for colegio_data in st.session_state.colegios_agregados:
+
+                st.success(
+                    f"🏫 {colegio_data['colegio']}"
+                )
+
+                for prenda in colegio_data["prendas"]:
+
+                    st.write(
+                        f"• {prenda['tipo']} "
+                        f"({prenda['talla']}) "
+                        f"x {prenda['cantidad']}"
+                    )
+
+        st.divider()
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            if st.button(
+                "➕ Agregar Otro Colegio",
+                use_container_width=True
+            ):
+                st.rerun()
+
+        with col2:
+
+            if st.button(
+                "Continuar ➡️",
+                use_container_width=True
+            ):
+
+
+            # if st.button(
+            #     "Continuar ➡️",
+            #     use_container_width=True
+            # ):
+
+                if len(
+                    st.session_state.colegios_agregados
+                ) == 0:
+
+                    st.error(
+                        "Debe guardar al menos un colegio."
+                    )
+
+                else:
+
+                    st.session_state.paso = 3
+
+                    st.rerun()
                 
 # ==========================================
 # PASO 3
@@ -820,5 +852,382 @@ elif st.session_state.paso == 5:
 
                 st.rerun()
             st.stop()
+if pagina == "📋 Consultas":
 
- 
+    st.title(
+        "📋 Consulta de Órdenes"
+    )
+
+    df_ordenes = obtener_ordenes()
+
+    df_consulta = df_ordenes[
+        [
+            "id",
+            "nombre",
+            "colegio",
+            "status",
+            "fecha_entrega",
+            "saldo_pendiente"
+        ]
+    ].copy()
+
+    df_consulta.columns = [
+        "ID",
+        "Cliente",
+        "Colegio",
+        "Estado",
+        "Entrega",
+        "Saldo"
+    ]
+
+    st.dataframe(
+        df_consulta,
+        use_container_width=True
+    )
+    pedido_id = st.selectbox(
+        "Seleccione un pedido",
+        df_ordenes["id"].tolist()
+    )
+
+    st.info(
+        f"📦 Pedido seleccionado: #{pedido_id:04d}"
+    )
+    pedido = obtener_orden_por_id(
+        pedido_id
+    )
+
+    pedido = pedido.iloc[0]
+
+    estado = pedido["status"]
+
+    if estado == "Recibido":
+
+        st.warning(
+            "🟡 Estado: Recibido"
+        )
+
+    elif estado == "En Producción":
+
+        st.info(
+            "🔵 Estado: En Producción"
+        )
+
+    elif estado == "Listo para Entrega":
+
+        st.success(
+            "🟢 Estado: Listo para Entrega"
+        )
+
+    elif estado == "Anulado":
+
+        st.error(
+            "🔴 Estado: Anulado"
+        )
+
+    st.info(
+        f"👤 {pedido['nombre']} | "
+        f"📞 {pedido['telefono']} | "
+        f"📧 {pedido['correo']}"
+    )    
+    detalle_orden = obtener_detalle_orden(
+        pedido_id
+    )
+
+    with st.expander(
+        "👕 Prendas"
+    ):
+
+        st.dataframe(
+            detalle_orden,
+            use_container_width=True
+        )
+    with st.expander(
+        "💰 Pagos"
+    ):
+
+        saldo = float(
+            pedido.get(
+                "saldo_pendiente",
+                0
+            )
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.metric(
+                "Saldo",
+                f"${saldo:.2f}"
+            )
+
+        with col2:
+
+            st.metric(
+                "Total",
+                f"${saldo:.2f}"
+            )
+
+        if saldo <= 0:
+
+            st.success(
+                "💳 Estado Pago: ✅ Pagado"
+            )
+
+        else:
+
+            st.warning(
+                f"💳 Estado Pago: 🔴 Pendiente (${saldo:.2f})"
+            )
+
+            st.divider()
+
+            monto_pago = st.number_input(
+                "Monto recibido",
+                min_value=0.0,
+                step=1.0
+            )
+
+            if st.button(
+                "💾 Registrar Pago",
+                key=f"registrar_pago_{pedido_id}"
+            ):
+
+                if monto_pago > saldo:
+
+                    st.error(
+                        "❌ El pago no puede exceder el saldo pendiente."
+                    )
+
+                elif monto_pago <= 0:
+
+                    st.error(
+                        "❌ Debe ingresar un monto válido."
+                    )
+
+                else:
+
+                    registrar_pago(
+                        pedido_id,
+                        monto_pago
+                    )
+
+                    st.success(
+                        "✅ Pago registrado correctamente."
+                    )
+
+                    st.rerun()                    
+        with st.expander(
+            "📄 Documentos"
+        ):
+
+            if st.button(
+                "📄 Generar PDF"
+            ):
+
+                detalle_orden = obtener_detalle_orden(
+                    pedido_id
+                )
+
+                pdf_file = generar_pdf_orden(
+                    pedido,
+                    detalle_orden
+                )
+
+                st.success(
+                    "✅ PDF generado"
+                )
+
+                with open(
+                    pdf_file,
+                    "rb"
+                ) as archivo:
+
+                    st.download_button(
+                        "📥 Descargar PDF",
+                        archivo,
+                        file_name=pdf_file,
+                        mime="application/pdf"
+                    )
+
+            st.divider()
+
+            if st.button(
+                "📊 Generar Excel Pedido"
+            ):
+
+                detalle_orden = obtener_detalle_orden(
+                    pedido_id
+                )
+
+                excel_file = generar_excel_orden(
+                    pedido,
+                    detalle_orden
+                )
+
+                st.success(
+                    "✅ Excel generado"
+                )
+
+                with open(
+                    excel_file,
+                    "rb"
+                ) as archivo:
+
+                    st.download_button(
+                        "📥 Descargar Excel Pedido",
+                        archivo,
+                        file_name=excel_file,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+
+            st.divider()
+        if st.button(
+            "📋 Generar Excel Bordaclick Ordenes"
+        ):
+
+            df_ordenes_excel = obtener_ordenes()
+
+            excel_nombre = "Bordaclick_Ordenes.xlsx"
+
+            with pd.ExcelWriter(
+                excel_nombre,
+                engine="openpyxl"
+            ) as writer:
+
+                df_ordenes_excel.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Ordenes"
+                )
+
+            st.success(
+                "✅ Excel general generado"
+            )
+
+            with open(
+                excel_nombre,
+                "rb"
+            ) as archivo:
+
+                st.download_button(
+                    "📥 Descargar Excel Bordaclick Ordenes",
+                    data=archivo,
+                    file_name=excel_nombre,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+
+    with st.expander(
+        "📧 Comunicaciones"
+    ):
+
+        st.info(
+            f"Correo registrado: {pedido['correo']}"
+        )
+
+        if st.button(
+            "📧 Reenviar Correo"
+        ):
+
+            detalle_orden = obtener_detalle_orden(
+                pedido_id
+            )
+
+            pdf_file = generar_pdf_orden(
+                pedido,
+                detalle_orden
+            )
+
+            enviar_pdf_por_correo(
+                pedido["correo"],
+                pedido["nombre"],
+                pedido["id"],
+                pedido["fecha_entrega"],
+                pdf_file
+            )
+
+            st.success(
+                "✅ Correo enviado correctamente"
+            )
+    with st.expander(
+        "🏭 Producción"
+    ):
+
+        if st.session_state.get(
+            "estado_actualizado",
+            False
+        ):
+
+            st.success(
+                "✅ Estado actualizado correctamente"
+            )
+
+            st.session_state["estado_actualizado"] = False
+
+        st.write(
+            f"Estado actual: {pedido['status']}"
+        )
+
+        estados = [
+            "Recibido",
+            "En Producción",
+            "Listo para Entrega",
+            "Anulado"
+        ]
+
+        indice_estado = (
+            estados.index(pedido["status"])
+            if pedido["status"] in estados
+            else 0
+        )
+
+        nuevo_estado = st.selectbox(
+            "Cambiar estado",
+            estados,
+            index=indice_estado
+        )
+
+        if st.button(
+            "🔄 Actualizar Estado",
+            key=f"actualizar_estado_{pedido_id}"
+        ):
+
+            actualizar_status_orden(
+                pedido_id,
+                nuevo_estado
+            )
+
+            if nuevo_estado in [
+                "En Producción",
+                "Listo para Entrega"
+            ]:
+
+                enviar_notificacion_estado(
+                    pedido["correo"],
+                    pedido["nombre"],
+                    pedido["id"],
+                    pedido["fecha_entrega"],
+                    nuevo_estado,
+                    pedido["delivery"]
+                )
+
+            st.session_state[
+                "estado_actualizado"
+            ] = True
+
+            st.rerun()
+
+        st.divider()
+
+        st.write(
+            f"📅 Entrega: {pedido['fecha_entrega']}"
+        )
+
+        st.write(
+            f"🚚 Delivery: {pedido['delivery']}"
+        )
+
+        st.write(
+            f"📍 Zona: {pedido['zona_delivery']}"
+        )
+                                
