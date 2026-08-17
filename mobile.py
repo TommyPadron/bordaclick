@@ -140,17 +140,18 @@ if pagina == "📝 Nueva Solicitud":
                 st.error(
                     "Debe ingresar el nombre."
                 )
-
             elif telefono == "":
-
                 st.error(
                     "Debe ingresar el teléfono."
                 )
 
-            elif correo == "":
-
+            elif len(telefono.strip()) < 10:
                 st.error(
-                    "Debe ingresar el correo electrónico."
+                    "Debe ingresar un teléfono válido."
+                )
+            elif "@" not in correo or "." not in correo:
+                st.error(
+                    "Debe ingresar un correo válido."
                 )
 
             else:
@@ -351,6 +352,33 @@ if pagina == "📝 Nueva Solicitud":
                 )
 
             else:
+                colegio_duplicado = any(
+                    c["colegio"] == colegio
+                    for c in st.session_state.colegios_agregados
+                )
+
+                if colegio_duplicado:
+
+                    st.error(
+                        "Ese colegio ya fue agregado."
+                    )
+
+                else:
+
+                    st.session_state.colegios_agregados.append(
+                        {
+                            "colegio": colegio,
+                            "prendas": st.session_state.prendas_actuales.copy()
+                        }
+                    )
+
+                    st.session_state.prendas_actuales = []
+
+                    st.success(
+                        "✅ Colegio guardado correctamente"
+                    )
+
+                    st.rerun()                
                 st.session_state.colegios_agregados.append(
                     {
                         "colegio": colegio,
@@ -555,7 +583,6 @@ if pagina == "📝 Nueva Solicitud":
                 "Continuar ➡️",
                 use_container_width=True
             ):
-
                 if bordar_nombre == "Seleccione una opción...":
 
                     st.error(
@@ -566,6 +593,12 @@ if pagina == "📝 Nueva Solicitud":
 
                     st.error(
                         "Debe indicar si desea delivery."
+                    )
+
+                elif bordar_nombre == "Sí" and nombre_bordado.strip() == "":
+
+                    st.error(
+                        "Debe indicar el detalle del bordado."
                     )
 
                 else:
@@ -579,7 +612,21 @@ if pagina == "📝 Nueva Solicitud":
                     st.session_state.costo_delivery = costo_delivery
 
                     st.session_state.paso = 5
-                    st.rerun() 
+
+                    st.rerun()
+                # if bordar_nombre == "Seleccione una opción...":
+
+                #     st.error(
+                #         "Debe indicar si desea bordar nombres."
+                #     )
+
+                # elif delivery == "Seleccione una opción...":
+
+                #     st.error(
+                #         "Debe indicar si desea delivery."
+                #     )
+
+
 # ==========================================
 # PASO 5
 # ==========================================
