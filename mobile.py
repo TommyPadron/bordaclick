@@ -429,10 +429,20 @@ if pagina == "📝 Nueva Solicitud":
 # ==========================================
 
     elif st.session_state.paso == 3:
+        st.markdown(
+            """
+            <div id="inicio_paso3"></div>
+            """,
+            unsafe_allow_html=True
+        )
+
         st.components.v1.html(
             """
             <script>
-            window.parent.scrollTo(0,0);
+            const anchor = window.parent.document.getElementById("inicio_paso3");
+            if(anchor){
+                anchor.scrollIntoView({behavior: "instant", block: "start"});
+            }
             </script>
             """,
             height=0
@@ -440,7 +450,7 @@ if pagina == "📝 Nueva Solicitud":
         st.progress(75)
 
         st.subheader("🧵 Bordado y Delivery")
-        st.write("⬆️ INICIO PASO 3")
+
         tipo_logo = st.selectbox(
             "Tipo de Logo",
             [
