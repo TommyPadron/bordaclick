@@ -1348,6 +1348,50 @@ Bordados Escolares Personalizados
         )
 
         raise
+################################################
+import sqlite3
+import pandas as pd
+
+def obtener_detalle_orden_db(pedido_id):
+    """Consulta las prendas asociadas a una orden en la BD."""
+    conn = sqlite3.connect("bordaclick.db")
+    query = """
+        SELECT id, colegio AS "Colegio", tipo_prenda AS "Tipo Prenda", 
+               talla AS "Talla", marca AS "Marca", color AS "Color", 
+               cantidad AS "Cantidad", nombre_bordado AS "Nombre_Bordado"
+        FROM detalle_orden
+        WHERE orden_id = ?
+    """
+    df = pd.read_sql_query(query, conn, params=(pedido_id,))
+    conn.close()
+    return df
+
+def guardar_detalle_orden_db(pedido_id, df_prendas):
+    """Guarda o actualiza el lote de prendas de la orden en la BD."""
+    conn = sqlite3.connect("bordaclick.db")
+    cursor = conn.cursor()
+    
+    # 1. Limpiamos las prendas anteriores de este pedido para sobreescribir con la lista actualizada
+    cursor.execute("DELETE FROM detalle_orden WHERE orden_id = ?", (pedido_id,))
+    
+    # 2. Insertamos cada fila de la tabla
+    for _, fila in df_prendas.iterrows():
+        cursor.execute("""
+            INSERT INTO detalle_orden (orden_id, colegio, tipo_prenda, talla, marca, color, cantidad, nombre_bordado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            pedido_id,
+            fila.get("Colegio", ""),
+            fila.get("Tipo Prenda", ""),
+            fila.get("Talla", ""),
+            fila.get("Marca", ""),
+            fila.get("Color", ""),
+            int(fila.get("Cantidad", 1)),
+            fila.get("Nombre_Bordado", "")
+        ))
+        
+    conn.commit()
+    conn.close()    
     
    
 
