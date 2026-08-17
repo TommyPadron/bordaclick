@@ -518,161 +518,111 @@ if pagina == "📝 Nueva Solicitud":
 
             st.divider()
 
-            st.subheader("🚚 Delivery")
+        #     st.subheader("🚚 Delivery")
 
-            delivery = st.radio(
-                "¿Desea Delivery?",
-                [
-                    "Sí",
-                    "No"
-                ]
-            )
-
-            zona_delivery = ""
-
-            costo_delivery = 0
-
-            if delivery == "Sí":
-
-                lista_zonas = (
-                    obtener_zonas_delivery()["nombre"]
-                    .dropna()
-                    .tolist()
-                )
-
-                zona_delivery = st.selectbox(
-                    "Zona de Delivery",
-                    lista_zonas
-                )
-
-                try:
-
-                    costo_delivery = obtener_costo_delivery(
-                        zona_delivery
-                    )
-
-                    st.success(
-                        f"🚚 Costo Delivery: ${costo_delivery:.2f}"
-                    )
-
-                except:
-
-                    st.warning(
-                        "No se pudo obtener el costo del delivery."
-                    )
-
-            else:
-
-                st.info(
-                    "📍 Retiro en tienda"
-                )
-
-        else:
-
-            delivery = "No"
-            zona_delivery = ""
-            costo_delivery = 0
-
-            st.info(
-                "⬆️ Complete primero la información del bordado para continuar."
-            )
-        # st.subheader("🚚 Delivery")
-
-        # delivery = st.radio(
-        #     "¿Desea Delivery?",
-        #     [
-        #         "Sí",
-        #         "No"
-        #     ],
-        #     key="paso3_delivery"
-        # )
-
-        # zona_delivery = ""
-
-        # costo_delivery = 0
-
-        # if delivery == "Sí":
-
-        #     lista_zonas = (
-        #         obtener_zonas_delivery()["nombre"]
-        #         .dropna()
-        #         .tolist()
+        #     delivery = st.radio(
+        #         "¿Desea Delivery?",
+        #         [
+        #             "Sí",
+        #             "No"
+        #         ]
         #     )
 
-        #     zona_delivery = st.selectbox(
-        #         "Zona de Delivery",
-        #         lista_zonas,
-        #         key="paso3_zona_delivery"
-        #     )
-            
-        #     try:
+        #     zona_delivery = ""
 
-        #         costo_delivery = obtener_costo_delivery(
-        #             zona_delivery
+        #     costo_delivery = 0
+
+        #     if delivery == "Sí":
+
+        #         lista_zonas = (
+        #             obtener_zonas_delivery()["nombre"]
+        #             .dropna()
+        #             .tolist()
         #         )
 
-        #         st.success(
-        #             f"🚚 Costo Delivery: ${costo_delivery:.2f}"
+        #         zona_delivery = st.selectbox(
+        #             "Zona de Delivery",
+        #             lista_zonas
         #         )
 
-        #     except:
+        #         try:
 
-        #         st.warning(
-        #             "No se pudo obtener el costo del delivery."
+        #             costo_delivery = obtener_costo_delivery(
+        #                 zona_delivery
+        #             )
+
+        #             st.success(
+        #                 f"🚚 Costo Delivery: ${costo_delivery:.2f}"
+        #             )
+
+        #         except:
+
+        #             st.warning(
+        #                 "No se pudo obtener el costo del delivery."
+        #             )
+
+        #     else:
+
+        #         st.info(
+        #             "📍 Retiro en tienda"
         #         )
 
         # else:
 
+        #     delivery = "No"
+        #     zona_delivery = ""
+        #     costo_delivery = 0
+
         #     st.info(
-        #         "📍 Retiro en tienda"
+        #         "⬆️ Complete primero la información del bordado para continuar."
         #     )
 
-        col1, col2 = st.columns(2)
+        # col1, col2 = st.columns(2)
 
-        with col1:
+        # with col1:
 
-            if st.button(
-                "⬅️ Atrás",
-                use_container_width=True
-            ):
-                st.session_state.paso = 2
-                st.rerun()
+        #     if st.button(
+        #         "⬅️ Atrás",
+        #         use_container_width=True
+        #     ):
+        #         st.session_state.paso = 2
+        #         st.rerun()
 
-        with col2:
+        # with col2:
 
-            if st.button(
-                "Continuar ➡️",
-                use_container_width=True
-            ):
+        #     if st.button(
+        #         "Continuar ➡️",
+        #         use_container_width=True
+        #     ):
 
-                if (
-                    bordar_nombre == "Sí"
-                    and cantidad_nombre > total_prendas
-                ):
+        #         if (
+        #             bordar_nombre == "Sí"
+        #             and cantidad_nombre > total_prendas
+        #         ):
 
-                    st.error(
-                        f"No puede bordar nombres en más de {total_prendas} prendas."
-                    )
+        #             st.error(
+        #                 f"No puede bordar nombres en más de {total_prendas} prendas."
+        #             )
 
-                else:
+        #         else:
 
-                    st.session_state.tipo_logo = tipo_logo
+        #             st.session_state.tipo_logo = tipo_logo
 
-                    st.session_state.bordar_nombre = bordar_nombre
+        #             st.session_state.bordar_nombre = bordar_nombre
 
-                    st.session_state.nombre_bordado = nombre_bordado
+        #             st.session_state.nombre_bordado = nombre_bordado
 
-                    st.session_state.cantidad_nombre = cantidad_nombre
+        #             st.session_state.cantidad_nombre = cantidad_nombre
 
-                    st.session_state.delivery = delivery
+        #             st.session_state.delivery = delivery
 
-                    st.session_state.zona_delivery = zona_delivery
+        #             st.session_state.zona_delivery = zona_delivery
 
-                    st.session_state.costo_delivery = costo_delivery
+        #             st.session_state.costo_delivery = costo_delivery
 
-                    st.session_state.paso = 5
+        #             st.session_state.paso = 5
 
-                    st.rerun()                
+        #             st.rerun()                
 
 
 # ==========================================
