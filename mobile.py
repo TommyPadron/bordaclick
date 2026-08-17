@@ -427,12 +427,12 @@ if pagina == "📝 Nueva Solicitud":
 # ==========================================
 # PASO 3
 # ==========================================
-
     elif st.session_state.paso == 3:
 
         st.progress(75)
 
         st.subheader("🧵 Bordado y Delivery")
+
         tipo_logo = st.selectbox(
             "Tipo de Logo",
             [
@@ -442,33 +442,33 @@ if pagina == "📝 Nueva Solicitud":
             ],
             key="paso3_tipo_logo"
         )
+
         bordar_nombre = st.radio(
             "¿Desea bordar nombres?",
             [
-                "Sí",
-                "No"
+                "No",
+                "Sí"
             ],
+            index=0,
             key="paso3_bordar_nombre"
         )
 
         nombre_bordado = ""
-
         cantidad_nombre = 0
 
         total_prendas = 0
 
         for colegio_data in st.session_state.colegios_agregados:
-
             for prenda in colegio_data["prendas"]:
-
                 total_prendas += prenda["cantidad"]
 
         if bordar_nombre == "Sí":
 
             nombre_bordado = st.text_area(
-                "Detalle el nombre a bordar por cada prenda Ejemplo: Sueter talla 10, colocar Miranda Guerrero detrás de la capucha letras blancas.",
+                "Detalle del nombre a bordar por cada prenda. Ejemplo: Sueter talla 10 colocar Miranda Guerrero detrás de la capucha letras blancas.",
                 key="paso3_nombre_bordado"
             )
+
             cantidad_nombre = st.number_input(
                 "Cantidad de Prendas con Nombre",
                 min_value=1,
@@ -482,149 +482,101 @@ if pagina == "📝 Nueva Solicitud":
             )
 
             if cantidad_nombre > total_prendas:
-
                 st.error(
                     f"No puede bordar nombres en más de {total_prendas} prendas."
                 )
 
         st.divider()
-        bordado_completo = False
 
-        if bordar_nombre == "Sí":
+        st.subheader("🚚 Delivery")
 
-            nombre_bordado = st.text_area(
-                "Detalle del nombre a bordar por cada prenda Ejemplo: Sueter talla 10 colocar Miranda Guerrero detrás de la capucha letras blancas"
+        delivery = st.radio(
+            "¿Desea Delivery?",
+            [
+                "No",
+                "Sí"
+            ],
+            index=0,
+            key="paso3_delivery"
+        )
+
+        zona_delivery = ""
+        costo_delivery = 0
+
+        if delivery == "Sí":
+
+            lista_zonas = (
+                obtener_zonas_delivery()["nombre"]
+                .dropna()
+                .tolist()
             )
 
-            cantidad_nombre = st.number_input(
-                "Cantidad de Prendas con Nombre",
-                min_value=1,
-                max_value=int(total_prendas),
-                value=1
+            zona_delivery = st.selectbox(
+                "Zona de Delivery",
+                lista_zonas,
+                key="paso3_zona_delivery"
             )
 
-            st.caption(
-                f"Máximo permitido: {total_prendas} prendas"
-            )
+            try:
 
-            if nombre_bordado.strip() != "":
-                bordado_completo = True
+                costo_delivery = obtener_costo_delivery(
+                    zona_delivery
+                )
+
+                st.success(
+                    f"🚚 Costo Delivery: ${costo_delivery:.2f}"
+                )
+
+            except:
+
+                st.warning(
+                    "No se pudo obtener el costo del delivery."
+                )
 
         else:
 
-            bordado_completo = True
+            st.info("📍 Retiro en tienda")
 
-        if bordado_completo:
+        col1, col2 = st.columns(2)
 
-            st.divider()
+        with col1:
 
-        #     st.subheader("🚚 Delivery")
+            if st.button(
+                "⬅️ Atrás",
+                use_container_width=True
+            ):
+                st.session_state.paso = 2
+                st.rerun()
 
-        #     delivery = st.radio(
-        #         "¿Desea Delivery?",
-        #         [
-        #             "Sí",
-        #             "No"
-        #         ]
-        #     )
+        with col2:
 
-        #     zona_delivery = ""
+            if st.button(
+                "Continuar ➡️",
+                use_container_width=True
+            ):
 
-        #     costo_delivery = 0
+                if (
+                    bordar_nombre == "Sí"
+                    and cantidad_nombre > total_prendas
+                ):
 
-        #     if delivery == "Sí":
+                    st.error(
+                        f"No puede bordar nombres en más de {total_prendas} prendas."
+                    )
 
-        #         lista_zonas = (
-        #             obtener_zonas_delivery()["nombre"]
-        #             .dropna()
-        #             .tolist()
-        #         )
+                else:
 
-        #         zona_delivery = st.selectbox(
-        #             "Zona de Delivery",
-        #             lista_zonas
-        #         )
+                    st.session_state.tipo_logo = tipo_logo
+                    st.session_state.bordar_nombre = bordar_nombre
+                    st.session_state.nombre_bordado = nombre_bordado
+                    st.session_state.cantidad_nombre = cantidad_nombre
+                    st.session_state.delivery = delivery
+                    st.session_state.zona_delivery = zona_delivery
+                    st.session_state.costo_delivery = costo_delivery
 
-        #         try:
-
-        #             costo_delivery = obtener_costo_delivery(
-        #                 zona_delivery
-        #             )
-
-        #             st.success(
-        #                 f"🚚 Costo Delivery: ${costo_delivery:.2f}"
-        #             )
-
-        #         except:
-
-        #             st.warning(
-        #                 "No se pudo obtener el costo del delivery."
-        #             )
-
-        #     else:
-
-        #         st.info(
-        #             "📍 Retiro en tienda"
-        #         )
-
-        # else:
-
-        #     delivery = "No"
-        #     zona_delivery = ""
-        #     costo_delivery = 0
-
-        #     st.info(
-        #         "⬆️ Complete primero la información del bordado para continuar."
-        #     )
-
-        # col1, col2 = st.columns(2)
-
-        # with col1:
-
-        #     if st.button(
-        #         "⬅️ Atrás",
-        #         use_container_width=True
-        #     ):
-        #         st.session_state.paso = 2
-        #         st.rerun()
-
-        # with col2:
-
-        #     if st.button(
-        #         "Continuar ➡️",
-        #         use_container_width=True
-        #     ):
-
-        #         if (
-        #             bordar_nombre == "Sí"
-        #             and cantidad_nombre > total_prendas
-        #         ):
-
-        #             st.error(
-        #                 f"No puede bordar nombres en más de {total_prendas} prendas."
-        #             )
-
-        #         else:
-
-        #             st.session_state.tipo_logo = tipo_logo
-
-        #             st.session_state.bordar_nombre = bordar_nombre
-
-        #             st.session_state.nombre_bordado = nombre_bordado
-
-        #             st.session_state.cantidad_nombre = cantidad_nombre
-
-        #             st.session_state.delivery = delivery
-
-        #             st.session_state.zona_delivery = zona_delivery
-
-        #             st.session_state.costo_delivery = costo_delivery
-
-        #             st.session_state.paso = 5
-
-        #             st.rerun()                
-
-
+                    st.session_state.paso = 5
+                    st.rerun()
+ 
 # ==========================================
 # PASO 5
 # ==========================================
