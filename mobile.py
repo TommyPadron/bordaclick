@@ -440,7 +440,7 @@ if pagina == "📝 Nueva Solicitud":
         st.progress(75)
 
         st.subheader("🧵 Bordado y Delivery")
-
+        st.write("⬆️ INICIO PASO 3")
         tipo_logo = st.selectbox(
             "Tipo de Logo",
             [
