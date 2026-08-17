@@ -443,9 +443,10 @@ if pagina == "📝 Nueva Solicitud":
             key="paso3_tipo_logo"
         )
 
-        bordar_nombre = st.radio(
+        bordar_nombre = st.selectbox(
             "¿Desea bordar nombres?",
             [
+                "Seleccione una opción...",
                 "No",
                 "Sí"
             ],
@@ -481,18 +482,18 @@ if pagina == "📝 Nueva Solicitud":
                 f"Máximo permitido: {total_prendas} prendas"
             )
 
-            if cantidad_nombre > total_prendas:
-                st.error(
-                    f"No puede bordar nombres en más de {total_prendas} prendas."
-                )
+        elif bordar_nombre == "No":
+
+            st.success("✅ Sin bordado de nombres")
 
         st.divider()
 
         st.subheader("🚚 Delivery")
 
-        delivery = st.radio(
+        delivery = st.selectbox(
             "¿Desea Delivery?",
             [
+                "Seleccione una opción...",
                 "No",
                 "Sí"
             ],
@@ -533,7 +534,7 @@ if pagina == "📝 Nueva Solicitud":
                     "No se pudo obtener el costo del delivery."
                 )
 
-        else:
+        elif delivery == "No":
 
             st.info("📍 Retiro en tienda")
 
@@ -555,13 +556,16 @@ if pagina == "📝 Nueva Solicitud":
                 use_container_width=True
             ):
 
-                if (
-                    bordar_nombre == "Sí"
-                    and cantidad_nombre > total_prendas
-                ):
+                if bordar_nombre == "Seleccione una opción...":
 
                     st.error(
-                        f"No puede bordar nombres en más de {total_prendas} prendas."
+                        "Debe indicar si desea bordar nombres."
+                    )
+
+                elif delivery == "Seleccione una opción...":
+
+                    st.error(
+                        "Debe indicar si desea delivery."
                     )
 
                 else:
@@ -575,8 +579,7 @@ if pagina == "📝 Nueva Solicitud":
                     st.session_state.costo_delivery = costo_delivery
 
                     st.session_state.paso = 5
-                    st.rerun()
- 
+                    st.rerun() 
 # ==========================================
 # PASO 5
 # ==========================================
