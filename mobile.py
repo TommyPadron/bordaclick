@@ -488,57 +488,144 @@ if pagina == "📝 Nueva Solicitud":
                 )
 
         st.divider()
+        bordado_completo = False
 
-        st.subheader("🚚 Delivery")
+        if bordar_nombre == "Sí":
 
-        delivery = st.radio(
-            "¿Desea Delivery?",
-            [
-                "Sí",
-                "No"
-            ],
-            key="paso3_delivery"
-        )
-
-        zona_delivery = ""
-
-        costo_delivery = 0
-
-        if delivery == "Sí":
-
-            lista_zonas = (
-                obtener_zonas_delivery()["nombre"]
-                .dropna()
-                .tolist()
+            nombre_bordado = st.text_area(
+                "Detalle del nombre a bordar por cada prenda Ejemplo: Sueter talla 10 colocar Miranda Guerrero detrás de la capucha letras blancas"
             )
 
-            zona_delivery = st.selectbox(
-                "Zona de Delivery",
-                lista_zonas,
-                key="paso3_zona_delivery"
+            cantidad_nombre = st.number_input(
+                "Cantidad de Prendas con Nombre",
+                min_value=1,
+                max_value=int(total_prendas),
+                value=1
             )
-            
-            try:
 
-                costo_delivery = obtener_costo_delivery(
-                    zona_delivery
+            st.caption(
+                f"Máximo permitido: {total_prendas} prendas"
+            )
+
+            if nombre_bordado.strip() != "":
+                bordado_completo = True
+
+        else:
+
+            bordado_completo = True
+
+        if bordado_completo:
+
+            st.divider()
+
+            st.subheader("🚚 Delivery")
+
+            delivery = st.radio(
+                "¿Desea Delivery?",
+                [
+                    "Sí",
+                    "No"
+                ]
+            )
+
+            zona_delivery = ""
+
+            costo_delivery = 0
+
+            if delivery == "Sí":
+
+                lista_zonas = (
+                    obtener_zonas_delivery()["nombre"]
+                    .dropna()
+                    .tolist()
                 )
 
-                st.success(
-                    f"🚚 Costo Delivery: ${costo_delivery:.2f}"
+                zona_delivery = st.selectbox(
+                    "Zona de Delivery",
+                    lista_zonas
                 )
 
-            except:
+                try:
 
-                st.warning(
-                    "No se pudo obtener el costo del delivery."
+                    costo_delivery = obtener_costo_delivery(
+                        zona_delivery
+                    )
+
+                    st.success(
+                        f"🚚 Costo Delivery: ${costo_delivery:.2f}"
+                    )
+
+                except:
+
+                    st.warning(
+                        "No se pudo obtener el costo del delivery."
+                    )
+
+            else:
+
+                st.info(
+                    "📍 Retiro en tienda"
                 )
 
         else:
 
+            delivery = "No"
+            zona_delivery = ""
+            costo_delivery = 0
+
             st.info(
-                "📍 Retiro en tienda"
+                "⬆️ Complete primero la información del bordado para continuar."
             )
+        # st.subheader("🚚 Delivery")
+
+        # delivery = st.radio(
+        #     "¿Desea Delivery?",
+        #     [
+        #         "Sí",
+        #         "No"
+        #     ],
+        #     key="paso3_delivery"
+        # )
+
+        # zona_delivery = ""
+
+        # costo_delivery = 0
+
+        # if delivery == "Sí":
+
+        #     lista_zonas = (
+        #         obtener_zonas_delivery()["nombre"]
+        #         .dropna()
+        #         .tolist()
+        #     )
+
+        #     zona_delivery = st.selectbox(
+        #         "Zona de Delivery",
+        #         lista_zonas,
+        #         key="paso3_zona_delivery"
+        #     )
+            
+        #     try:
+
+        #         costo_delivery = obtener_costo_delivery(
+        #             zona_delivery
+        #         )
+
+        #         st.success(
+        #             f"🚚 Costo Delivery: ${costo_delivery:.2f}"
+        #         )
+
+        #     except:
+
+        #         st.warning(
+        #             "No se pudo obtener el costo del delivery."
+        #         )
+
+        # else:
+
+        #     st.info(
+        #         "📍 Retiro en tienda"
+        #     )
 
         col1, col2 = st.columns(2)
 
