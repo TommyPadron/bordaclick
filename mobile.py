@@ -24,7 +24,9 @@ from database import (
     obtener_ordenes,
     registrar_pago,
     actualizar_status_orden,
-    enviar_notificacion_estado
+    enviar_notificacion_estado,
+    guardar_colegio,
+    obtener_colegios
     )
 from pdf_utils import (
     generar_pdf_orden,
@@ -1281,8 +1283,54 @@ if pagina == "🏫 Colegios":
         "🏫 Gestión de Colegios"
     )
 
-    st.info(
-        "Módulo en migración."
-    )        
+    df_colegios = obtener_colegios()
+
+    st.subheader(
+        "📚 Agregar Colegio"
+    )
+
+    nombre_colegio = st.text_input(
+        "Nombre del Colegio"
+    )
+
+    precio_colegio = st.number_input(
+        "Precio Bordado Colegio",
+        min_value=0.0,
+        step=0.50
+    )
+
+    if st.button(
+        "💾 Guardar Colegio"
+    ):
+
+        if nombre_colegio == "":
+
+            st.error(
+                "Debe ingresar el nombre del colegio."
+            )
+
+        else:
+
+            guardar_colegio(
+                nombre_colegio,
+                precio_colegio
+            )
+
+            st.success(
+                "✅ Colegio guardado"
+            )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader(
+        "📚 Colegios Registrados"
+    )
+
+    st.dataframe(
+        df_colegios,
+        use_container_width=True
+    )    
         
                                 
