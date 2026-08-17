@@ -429,7 +429,14 @@ if pagina == "📝 Nueva Solicitud":
 # ==========================================
 
     elif st.session_state.paso == 3:
-
+        st.components.v1.html(
+            """
+            <script>
+            window.parent.scrollTo(0,0);
+            </script>
+            """,
+            height=0
+        )
         st.progress(75)
 
         st.subheader("🧵 Bordado y Delivery")
@@ -590,7 +597,14 @@ if pagina == "📝 Nueva Solicitud":
 # ==========================================
 
     elif st.session_state.paso == 5:
-
+        st.components.v1.html(
+            """
+            <script>
+            window.parent.scrollTo(0,0);
+            </script>
+            """,
+            height=0
+        )
         st.progress(100)
 
         st.subheader("📋 Resumen de la Solicitud")
