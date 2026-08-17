@@ -52,7 +52,8 @@ if clave_admin == "BordaAdmin2026*":
     opciones_menu.extend(
         [
             "📋 Consultas",
-            "⚙️ Configuración"
+            "⚙️ Configuración",
+            "🏫 Colegios"
         ]
     )
 
@@ -1274,5 +1275,14 @@ if pagina == "⚙️ Configuración":
         st.success(
             "✅ Configuración actualizada"
         )
+if pagina == "🏫 Colegios":
+
+    st.title(
+        "🏫 Gestión de Colegios"
+    )
+
+    st.info(
+        "Módulo en migración."
+    )        
         
                                 
