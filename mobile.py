@@ -7,6 +7,8 @@ from datetime import (
 from database import (
     obtener_colegios,
     obtener_tipos_prenda,
+    guardar_tipo_prenda,
+    guardar_talla,
     obtener_tallas,
     obtener_marcas,
     obtener_colores,
@@ -26,7 +28,12 @@ from database import (
     actualizar_status_orden,
     enviar_notificacion_estado,
     guardar_colegio,
-    obtener_colegios
+    obtener_colegios,
+    guardar_zona_delivery,
+    obtener_zonas_delivery,
+    guardar_marca,
+    obtener_marcas,
+    guardar_color
     )
 from pdf_utils import (
     generar_pdf_orden,
@@ -55,7 +62,13 @@ if clave_admin == "BordaAdmin2026*":
         [
             "📋 Consultas",
             "⚙️ Configuración",
-            "🏫 Colegios"
+            "🏫 Colegios",
+            "🚚 Delivery",
+            "📦 Prendas",
+            "🏷️ Marcas",
+            "📏 Tallas",
+            "🎨 Colores",
+            "💾 Respaldo"
         ]
     )
 
@@ -1332,5 +1345,271 @@ if pagina == "🏫 Colegios":
         df_colegios,
         use_container_width=True
     )    
-        
-                                
+if pagina == "🚚 Delivery":
+
+    st.title(
+        "🚚 Gestión de Delivery"
+    )
+
+    st.subheader(
+        "🚚 Agregar Zona Delivery"
+    )
+
+    nombre_zona = st.text_input(
+        "Nombre de la Zona"
+    )
+
+    costo_zona = st.number_input(
+        "Costo Delivery",
+        min_value=0.0,
+        step=1.0
+    )
+
+    if st.button(
+        "💾 Guardar Zona Delivery"
+    ):
+
+        if nombre_zona == "":
+
+            st.error(
+                "Debe ingresar el nombre de la zona."
+            )
+
+        else:
+
+            guardar_zona_delivery(
+                nombre_zona,
+                costo_zona
+            )
+
+            st.success(
+                "✅ Zona Delivery guardada"
+            )
+
+            st.rerun()
+
+    df_zonas = obtener_zonas_delivery()
+
+    st.divider()
+
+    st.subheader(
+        "🚚 Zonas Delivery Registradas"
+    )
+
+    st.dataframe(
+        df_zonas,
+        use_container_width=True
+    )
+if pagina == "📦 Prendas":
+
+    st.title(
+        "📦 Gestión de Prendas"
+    )
+
+    st.subheader(
+        "📦 Agregar Tipo de Prenda"
+    )
+
+    nombre_tipo_prenda = st.text_input(
+        "Nombre del Tipo de Prenda"
+    )
+
+    if st.button(
+        "💾 Guardar Tipo de Prenda"
+    ):
+
+        if nombre_tipo_prenda == "":
+
+            st.error(
+                "Debe ingresar el nombre del tipo de prenda."
+            )
+
+        else:
+
+            guardar_tipo_prenda(
+                nombre_tipo_prenda
+            )
+
+            st.success(
+                "✅ Tipo de Prenda guardado"
+            )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader(
+        "📦 Tipos de Prenda Registrados"
+    )
+
+    df_tipos_prenda = obtener_tipos_prenda()
+
+    st.dataframe(
+        df_tipos_prenda,
+        use_container_width=True
+    )
+if pagina == "🏷️ Marcas":
+
+    st.title(
+        "🏷️ Gestión de Marcas"
+    )
+
+    st.subheader(
+        "🏷️ Agregar Marca"
+    )
+
+    nombre_marca = st.text_input(
+        "Nombre de la Marca"
+    )
+
+    if st.button(
+        "💾 Guardar Marca"
+    ):
+
+        if nombre_marca == "":
+
+            st.error(
+                "Debe ingresar el nombre de la marca."
+            )
+
+        else:
+
+            guardar_marca(
+                nombre_marca
+            )
+
+            st.success(
+                "✅ Marca guardada"
+            )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader(
+        "🏷️ Marcas Registradas"
+    )
+
+    df_marcas = obtener_marcas()
+
+    st.dataframe(
+        df_marcas,
+        use_container_width=True
+    )     
+if pagina == "📏 Tallas":
+
+    st.title(
+        "📏 Gestión de Tallas"
+    )
+
+    st.subheader(
+        "📏 Agregar Talla"
+    )
+
+    nombre_talla = st.text_input(
+        "Nombre de la Talla"
+    )
+
+    if st.button(
+        "💾 Guardar Talla"
+    ):
+
+        if nombre_talla == "":
+
+            st.error(
+                "Debe ingresar el nombre de la talla."
+            )
+
+        else:
+
+            guardar_talla(
+                nombre_talla
+            )
+
+            st.success(
+                "✅ Talla guardada"
+            )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader(
+        "📏 Tallas Registradas"
+    )
+
+    df_tallas = obtener_tallas()
+
+    st.dataframe(
+        df_tallas,
+        use_container_width=True
+    ) 
+if pagina == "🎨 Colores":
+
+    st.title(
+        "🎨 Gestión de Colores"
+    )
+
+    st.subheader(
+        "🎨 Agregar Color"
+    )
+
+    nombre_color = st.text_input(
+        "Nombre del Color"
+    )
+
+    if st.button(
+        "💾 Guardar Color"
+    ):
+
+        if nombre_color == "":
+
+            st.error(
+                "Debe ingresar el nombre del color."
+            )
+
+        else:
+
+            guardar_color(
+                nombre_color
+            )
+
+            st.success(
+                "✅ Color guardado"
+            )
+
+            st.rerun()
+
+    st.divider()
+
+    st.subheader(
+        "🎨 Colores Registrados"
+    )
+
+    df_colores = obtener_colores()
+
+    st.dataframe(
+        df_colores,
+        use_container_width=True
+    ) 
+if pagina == "💾 Respaldo":
+
+    st.title(
+        "💾 Respaldo de Base de Datos"
+    )
+
+    st.info(
+        "Descargue una copia de seguridad de Bordaclick."
+    )
+
+    with open(
+        "bordaclick.db",
+        "rb"
+    ) as archivo:
+
+        st.download_button(
+            "📥 Descargar Base de Datos",
+            data=archivo,
+            file_name="bordaclick_backup_mob.db",
+            mime="application/octet-stream"
+        )                                      
