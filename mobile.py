@@ -480,18 +480,18 @@ if pagina == "📝 Nueva Solicitud":
 
                 total_prendas += prenda["cantidad"]
 
-        if bordar_nombre == "Sí":
+        # if bordar_nombre == "Sí":
 
-            nombre_bordado = st.text_area(
-                "Detalle del nombre a bordar por cada prenda Ejemplo: Sueter talla 10 colocar Miranda Guerrero detrás de la capucha letras blancas"
-            )
+        #     nombre_bordado = st.text_area(
+        #         "Detalle del nombre a bordar por cada prenda Ejemplo: Sueter talla 10 colocar Miranda Guerrero detrás de la capucha letras blancas"
+        #     )
 
-            cantidad_nombre = st.number_input(
-                "Cantidad de Prendas con Nombre",
-                min_value=1,
-                max_value=int(total_prendas),
-                value=1
-            )
+        #     cantidad_nombre = st.number_input(
+        #         "Cantidad de Prendas con Nombre",
+        #         min_value=1,
+        #         max_value=int(total_prendas),
+        #         value=1
+        #     )
 
             st.caption(
                 f"Máximo permitido: {total_prendas} prendas"
