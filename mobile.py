@@ -429,43 +429,26 @@ if pagina == "📝 Nueva Solicitud":
 # ==========================================
 
     elif st.session_state.paso == 3:
-        st.markdown(
-            """
-            <div id="inicio_paso3"></div>
-            """,
-            unsafe_allow_html=True
-        )
 
-        st.components.v1.html(
-            """
-            <script>
-            const anchor = window.parent.document.getElementById("inicio_paso3");
-            if(anchor){
-                anchor.scrollIntoView({behavior: "instant", block: "start"});
-            }
-            </script>
-            """,
-            height=0
-        )
         st.progress(75)
 
         st.subheader("🧵 Bordado y Delivery")
-
         tipo_logo = st.selectbox(
             "Tipo de Logo",
             [
                 "Diario",
                 "Deporte",
                 "Preescolar"
-            ]
+            ],
+            key="paso3_tipo_logo"
         )
-
         bordar_nombre = st.radio(
             "¿Desea bordar nombres?",
             [
                 "Sí",
                 "No"
-            ]
+            ],
+            key="paso3_bordar_nombre"
         )
 
         nombre_bordado = ""
@@ -480,18 +463,19 @@ if pagina == "📝 Nueva Solicitud":
 
                 total_prendas += prenda["cantidad"]
 
-        # if bordar_nombre == "Sí":
+        if bordar_nombre == "Sí":
 
-        #     nombre_bordado = st.text_area(
-        #         "Detalle del nombre a bordar por cada prenda Ejemplo: Sueter talla 10 colocar Miranda Guerrero detrás de la capucha letras blancas"
-        #     )
-
-        #     cantidad_nombre = st.number_input(
-        #         "Cantidad de Prendas con Nombre",
-        #         min_value=1,
-        #         max_value=int(total_prendas),
-        #         value=1
-        #     )
+            nombre_bordado = st.text_area(
+                "Detalle el nombre a bordar por cada prenda Ejemplo: Sueter talla 10, colocar Miranda Guerrero detrás de la capucha letras blancas.",
+                key="paso3_nombre_bordado"
+            )
+            cantidad_nombre = st.number_input(
+                "Cantidad de Prendas con Nombre",
+                min_value=1,
+                max_value=int(total_prendas),
+                value=1,
+                key="paso3_cantidad_nombre"
+            )
 
             st.caption(
                 f"Máximo permitido: {total_prendas} prendas"
@@ -512,7 +496,8 @@ if pagina == "📝 Nueva Solicitud":
             [
                 "Sí",
                 "No"
-            ]
+            ],
+            key="paso3_delivery"
         )
 
         zona_delivery = ""
@@ -529,9 +514,10 @@ if pagina == "📝 Nueva Solicitud":
 
             zona_delivery = st.selectbox(
                 "Zona de Delivery",
-                lista_zonas
+                lista_zonas,
+                key="paso3_zona_delivery"
             )
-
+            
             try:
 
                 costo_delivery = obtener_costo_delivery(
