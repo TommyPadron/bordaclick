@@ -155,7 +155,7 @@ def generar_pdf_orden(orden, detalle_orden):
 
     doc.build(elementos)
     return nombre_pdf
-
+############################
 
 def generar_excel_orden(orden, detalle_orden):
     pedido_id = int(_safe_float(orden.get("id")))
