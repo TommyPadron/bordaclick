@@ -5,13 +5,23 @@ from datetime import date, timedelta
 from db_handler import (
     crear_bd,
     obtener_colegios,
+    guardar_colegio,
+    eliminar_colegio,
     obtener_tipos_prenda,
     guardar_tipo_prenda,
-    guardar_talla,
+    eliminar_tipo_prenda,
     obtener_tallas,
+    guardar_talla,
+    eliminar_talla,
     obtener_marcas,
+    guardar_marca,
+    eliminar_marca,
     obtener_colores,
+    guardar_color,
+    eliminar_color,
     obtener_zonas_delivery,
+    guardar_zona_delivery,
+    eliminar_zona_delivery,
     obtener_costo_delivery,
     obtener_parametro,
     guardar_parametro,
@@ -24,12 +34,9 @@ from db_handler import (
     enviar_confirmacion_solicitud,
     obtener_ordenes,
     registrar_pago,
+    obtener_historico_pagos,
     actualizar_status_orden,
-    enviar_notificacion_estado,
-    guardar_colegio,
-    guardar_zona_delivery,
-    guardar_marca,
-    guardar_color
+    enviar_notificacion_estado
 )
 
 from pdf_tools import (
@@ -204,8 +211,15 @@ if pagina == "📝 Nueva Solicitud":
         if not st.session_state.colegios_agregados:
             st.info("Aún no hay colegios guardados.")
         else:
-            for colegio_data in st.session_state.colegios_agregados:
-                st.success(f"🏫 {colegio_data['colegio']}")
+            for idx_col, colegio_data in enumerate(st.session_state.colegios_agregados):
+                c_lbl, c_btn = st.columns([5, 1])
+                with c_lbl:
+                    st.success(f"🏫 {colegio_data['colegio']}")
+                with c_btn:
+                    if st.button("🗑️", key=f"del_col_agregado_{idx_col}"):
+                        st.session_state.colegios_agregados.pop(idx_col)
+                        st.rerun()
+
                 for prenda in colegio_data["prendas"]:
                     st.write(f"• {prenda['tipo']} ({prenda['talla']}) x {prenda['cantidad']}")
 
@@ -404,7 +418,6 @@ elif pagina == "📋 Consultas":
     if df_ordenes.empty:
         st.info("ℹ️ No hay órdenes registradas en la base de datos.")
     else:
-        # BOTÓN SIEMPRE VISIBLE EN LA PARTE SUPERIOR
         excel_hist_file = generar_excel_historico(df_ordenes)
         with open(excel_hist_file, "rb") as f:
             st.download_button(
@@ -432,9 +445,16 @@ elif pagina == "📋 Consultas":
         with st.expander("👕 Prendas"):
             st.dataframe(detalle_orden, use_container_width=True)
 
-        with st.expander("💰 Pagos"):
+        with st.expander("💰 Pagos y Tasa de Cambio (USD / Bs.)"):
             saldo = float(pedido.get("saldo_pendiente", 0))
-            st.metric("Saldo Pendiente", f"${saldo:.2f}")
+            st.metric("Saldo Pendiente ($ USD)", f"${saldo:.2f}")
+
+            tasa_actual = float(obtener_parametro("tasa_cambio") or 0.0)
+            tasa_input = st.number_input("Tasa de Cambio (Bs / $)", min_value=0.0, value=tasa_actual, step=0.10, format="%.2f", key=f"tasa_pago_{pedido_id}")
+            
+            if tasa_input > 0 and saldo > 0:
+                saldo_bs = saldo * tasa_input
+                st.info(f"💡 **Saldo equivalente en Bolívares:** {saldo_bs:,.2f} Bs.")
 
             if pedido.get("fecha_pago"):
                 st.caption(f"📅 Fecha del último pago registrado: {pedido.get('fecha_pago')}")
@@ -443,20 +463,34 @@ elif pagina == "📋 Consultas":
                 st.success("💳 Estado Pago: ✅ Pagado")
             else:
                 st.warning(f"💳 Estado Pago: 🔴 Pendiente (${saldo:.2f})")
-                monto_pago = st.number_input("Monto recibido", min_value=0.0, step=1.0)
-                if st.button("💾 Registrar Pago", key=f"reg_pago_{pedido_id}"):
-                    if monto_pago > saldo:
-                        st.error("❌ El pago excede el saldo pendiente.")
-                    elif monto_pago <= 0:
-                        st.error("❌ Monto inválido.")
-                    else:
-                        registrar_pago(pedido_id, monto_pago)
-                        st.success("✅ Pago y fecha registrados correctamente.")
-                        st.rerun()
+
+            monto_pago = st.number_input("Monto recibido ($ USD)", min_value=0.0, step=1.0, key=f"monto_in_{pedido_id}")
+            
+            if monto_pago > 0 and tasa_input > 0:
+                monto_bs = round(monto_pago * tasa_input, 2)
+                st.write(f"💵 **Equivalente del pago:** {monto_bs:,.2f} Bs.")
+
+            if st.button("💾 Registrar Pago", key=f"reg_pago_{pedido_id}"):
+                if monto_pago > saldo and saldo > 0:
+                    st.error("❌ El pago excede el saldo pendiente.")
+                elif monto_pago <= 0:
+                    st.error("❌ Monto inválido.")
+                else:
+                    registrar_pago(pedido_id, monto_pago, tasa_input)
+                    st.success("✅ Pago y registro en Bolívares guardados correctamente.")
+                    st.rerun()
+
+            # Mostrar histórico de pagos de esta orden en Bs.
+            df_hist_pagos = obtener_historico_pagos(pedido_id)
+            if not df_hist_pagos.empty:
+                st.subheader("📜 Histórico de Pagos en Bolívares")
+                st.dataframe(df_hist_pagos[["monto_usd", "tasa_cambio", "monto_bs", "fecha"]], use_container_width=True)
 
         with st.expander("📄 Documentos"):
+            tasa_doc = st.number_input("Tasa para Comprobante PDF (Opcional)", min_value=0.0, value=float(obtener_parametro("tasa_cambio") or 0.0), step=0.10, key=f"tasa_pdf_{pedido_id}")
+            
             if st.button("📄 Generar PDF"):
-                pdf_file = generar_pdf_orden(pedido, detalle_orden)
+                pdf_file = generar_pdf_orden(pedido, detalle_orden, tasa_doc)
                 with open(pdf_file, "rb") as f:
                     st.download_button("📥 Descargar PDF", f, file_name=pdf_file, mime="application/pdf")
 
@@ -483,10 +517,12 @@ elif pagina == "⚙️ Configuración":
     st.title("⚙️ Configuración General")
     precio_nombre = st.number_input("Precio Bordado de Nombre", min_value=0.0, value=float(obtener_parametro("precio_nombre") or 0.0), step=0.50)
     dias_produccion = st.number_input("Días de Producción", min_value=1, value=int(obtener_parametro("dias_produccion") or 3), step=1)
+    tasa_cambio = st.number_input("Tasa de Cambio Predeterminada (Bs / $)", min_value=0.0, value=float(obtener_parametro("tasa_cambio") or 0.0), step=0.50)
 
     if st.button("💾 Guardar Configuración"):
         guardar_parametro("precio_nombre", precio_nombre)
         guardar_parametro("dias_produccion", dias_produccion)
+        guardar_parametro("tasa_cambio", tasa_cambio)
         st.success("✅ Configuración actualizada")
 
 elif pagina == "🏫 Colegios":
@@ -497,12 +533,23 @@ elif pagina == "🏫 Colegios":
     if st.button("💾 Guardar Colegio"):
         if nombre_colegio:
             guardar_colegio(nombre_colegio, precio_colegio)
-            st.success("✅ Colegio guardado")
+            st.success("✅ Colegio guardado/actualizado")
             st.rerun()
         else:
             st.error("Ingrese el nombre del colegio.")
 
-    st.dataframe(obtener_colegios(), use_container_width=True)
+    df_c = obtener_colegios()
+    if not df_c.empty:
+        st.divider()
+        st.subheader("📋 Lista de Colegios Registrados")
+        for _, fila in df_c.iterrows():
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.write(f"🏫 **{fila['nombre']}** - ${fila['precio_bordado']:.2f}")
+            with c2:
+                if st.button("🗑️", key=f"del_col_{fila['id']}"):
+                    eliminar_colegio(fila['id'])
+                    st.rerun()
 
 elif pagina == "🚚 Delivery":
     st.title("🚚 Gestión de Delivery")
@@ -512,10 +559,21 @@ elif pagina == "🚚 Delivery":
     if st.button("💾 Guardar Zona Delivery"):
         if nombre_zona:
             guardar_zona_delivery(nombre_zona, costo_zona)
-            st.success("✅ Zona Guardada")
+            st.success("✅ Zona Guardada/Actualizada")
             st.rerun()
 
-    st.dataframe(obtener_zonas_delivery(), use_container_width=True)
+    df_z = obtener_zonas_delivery()
+    if not df_z.empty:
+        st.divider()
+        st.subheader("📋 Zonas Registradas")
+        for _, fila in df_z.iterrows():
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.write(f"🚚 **{fila['nombre']}** - ${fila['costo']:.2f}")
+            with c2:
+                if st.button("🗑️", key=f"del_zona_{fila['nombre']}"):
+                    eliminar_zona_delivery(fila['nombre'])
+                    st.rerun()
 
 elif pagina == "📦 Prendas":
     st.title("📦 Gestión de Prendas")
@@ -524,7 +582,18 @@ elif pagina == "📦 Prendas":
         if tipo:
             guardar_tipo_prenda(tipo)
             st.rerun()
-    st.dataframe(obtener_tipos_prenda(), use_container_width=True)
+    
+    df_items = obtener_tipos_prenda()
+    if not df_items.empty:
+        st.divider()
+        for _, fila in df_items.iterrows():
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.write(f"👕 {fila['nombre']}")
+            with c2:
+                if st.button("🗑️", key=f"del_prenda_{fila['id']}"):
+                    eliminar_tipo_prenda(fila['id'])
+                    st.rerun()
 
 elif pagina == "🏷️ Marcas":
     st.title("🏷️ Gestión de Marcas")
@@ -533,7 +602,18 @@ elif pagina == "🏷️ Marcas":
         if marca:
             guardar_marca(marca)
             st.rerun()
-    st.dataframe(obtener_marcas(), use_container_width=True)
+
+    df_items = obtener_marcas()
+    if not df_items.empty:
+        st.divider()
+        for _, fila in df_items.iterrows():
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.write(f"🏷️ {fila['nombre']}")
+            with c2:
+                if st.button("🗑️", key=f"del_marca_{fila['id']}"):
+                    eliminar_marca(fila['id'])
+                    st.rerun()
 
 elif pagina == "📏 Tallas":
     st.title("📏 Gestión de Tallas")
@@ -542,7 +622,18 @@ elif pagina == "📏 Tallas":
         if talla:
             guardar_talla(talla)
             st.rerun()
-    st.dataframe(obtener_tallas(), use_container_width=True)
+
+    df_items = obtener_tallas()
+    if not df_items.empty:
+        st.divider()
+        for _, fila in df_items.iterrows():
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.write(f"📏 {fila['nombre']}")
+            with c2:
+                if st.button("🗑️", key=f"del_talla_{fila['id']}"):
+                    eliminar_talla(fila['id'])
+                    st.rerun()
 
 elif pagina == "🎨 Colores":
     st.title("🎨 Gestión de Colores")
@@ -551,7 +642,18 @@ elif pagina == "🎨 Colores":
         if color:
             guardar_color(color)
             st.rerun()
-    st.dataframe(obtener_colores(), use_container_width=True)
+
+    df_items = obtener_colores()
+    if not df_items.empty:
+        st.divider()
+        for _, fila in df_items.iterrows():
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.write(f"🎨 {fila['nombre']}")
+            with c2:
+                if st.button("🗑️", key=f"del_color_{fila['id']}"):
+                    eliminar_color(fila['id'])
+                    st.rerun()
 
 elif pagina == "💾 Respaldo":
     st.title("💾 Respaldo de Base de Datos")

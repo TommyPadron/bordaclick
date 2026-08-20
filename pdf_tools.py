@@ -1,4 +1,5 @@
 import pandas as pd
+import sqlite3
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 
@@ -7,12 +8,12 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableStyle,
-    Image
+    TableStyle
 )
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
+DATABASE = "bordaclick_dev.db"
 
 def _safe_float(val, default=0.0) -> float:
     try:
@@ -21,139 +22,163 @@ def _safe_float(val, default=0.0) -> float:
         return default
 
 
-def generar_pdf_orden(orden, detalle_orden):
+def generar_pdf_orden(orden, detalle_orden, tasa_cambio=0.0):
     pedido_id = int(_safe_float(orden.get("id")))
     nombre_pdf = f"Pedido_{pedido_id:04d}.pdf"
 
     doc = SimpleDocTemplate(
         nombre_pdf,
-        rightMargin=30,
-        leftMargin=30,
-        topMargin=30,
-        bottomMargin=30
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
     )
 
     estilos = getSampleStyleSheet()
+    
+    estilo_titulo = ParagraphStyle(
+        'TituloComprobante',
+        parent=estilos['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=16,
+        leading=20,
+        textColor=colors.HexColor("#1D3557")
+    )
+    
+    estilo_seccion = ParagraphStyle(
+        'SeccionHeader',
+        parent=estilos['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        leading=16,
+        textColor=colors.black
+    )
+
+    estilo_celda = ParagraphStyle('CeldaTabla', parent=estilos['Normal'], fontSize=9, leading=11)
+    estilo_celda_centro = ParagraphStyle('CeldaTablaCentro', parent=estilos['Normal'], fontSize=9, leading=11, alignment=1)
+    estilo_celda_header = ParagraphStyle('CeldaHeader', parent=estilos['Normal'], fontName='Helvetica-Bold', fontSize=9, leading=11, textColor=colors.white, alignment=1)
+
     elementos = []
 
-    try:
-        logo = Image("Logo Bordaclick.JPG", width=140, height=70)
-        elementos.append(logo)
-        elementos.append(Spacer(1, 10))
-    except Exception:
-        pass
+    # 1. Encabezado Título
+    elementos.append(Paragraph(f"BORDACLICK - COMPROBANTE DE ORDEN #{pedido_id:04d}", estilo_titulo))
+    elementos.append(Spacer(1, 15))
 
-    elementos.append(Paragraph("ORDEN DE SERVICIO", estilos["Heading1"]))
-    elementos.append(Spacer(1, 6))
-    elementos.append(Paragraph(f"Pedido #{pedido_id:04d}", estilos["Heading3"]))
+    # 2. Cuadro Datos Cliente / Entrega
+    delivery_str = str(orden.get("delivery", "No"))
+    if delivery_str == "Sí" and orden.get("zona_delivery"):
+        delivery_str += f" ({orden.get('zona_delivery')})"
 
-    fecha_pago_val = str(orden.get("fecha_pago", "Sin pagos registrados")) if orden.get("fecha_pago") else "Sin pagos registrados"
-
-    tabla_estado = Table(
+    datos_cuadro = [
         [
-            ["Estado", "Fecha Entrega", "Último Pago"],
-            [str(orden.get("status", "")), str(orden.get("fecha_entrega", "")), fecha_pago_val]
+            Paragraph(f"<b>Cliente:</b> {orden.get('nombre', '')}", estilo_celda),
+            Paragraph(f"<b>Fecha Entrega:</b> {orden.get('fecha_entrega', '')}", estilo_celda)
         ],
-        colWidths=[100, 110, 110]
-    )
-    tabla_estado.setStyle(
-        TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A365D")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 1, colors.black),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER")
-        ])
-    )
-    elementos.append(tabla_estado)
-    elementos.append(Spacer(1, 12))
+        [
+            Paragraph(f"<b>Teléfono:</b> {orden.get('telefono', '')}", estilo_celda),
+            Paragraph(f"<b>Estado:</b> {orden.get('status', '')}", estilo_celda)
+        ],
+        [
+            Paragraph(f"<b>Correo:</b> {orden.get('correo', '')}", estilo_celda),
+            Paragraph(f"<b>Delivery:</b> {delivery_str}", estilo_celda)
+        ]
+    ]
 
-    elementos.append(Paragraph("<b>DATOS DEL CLIENTE</b>", estilos["Heading3"]))
-    elementos.append(Paragraph(f"<b>Nombre:</b> {orden.get('nombre', '')}", estilos["Normal"]))
-    elementos.append(Paragraph(f"<b>Teléfono:</b> {orden.get('telefono', '')}", estilos["Normal"]))
-    elementos.append(Paragraph(f"<b>Correo:</b> {orden.get('correo', '')}", estilos["Normal"]))
-    elementos.append(Paragraph(f"<b>Colegio Principal:</b> {orden.get('colegio', '')}", estilos["Normal"]))
-    elementos.append(Spacer(1, 10))
+    tabla_info = Table(datos_cuadro, colWidths=[260, 260])
+    tabla_info.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F8F9FA")),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#CED4DA")),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor("#E9ECEF")),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ('RIGHTPADDING', (0,0), (-1,-1), 8),
+    ]))
+    elementos.append(tabla_info)
+    elementos.append(Spacer(1, 20))
 
-    elementos.append(Paragraph("<b>DATOS DE PRODUCCIÓN</b>", estilos["Heading3"]))
-    elementos.append(Paragraph(f"<b>Tipo de Logo:</b> {orden.get('tipo_logo', '')}", estilos["Normal"]))
-    elementos.append(Paragraph(f"<b>Cantidad Total:</b> {orden.get('cantidad_total', 0)}", estilos["Normal"]))
-    elementos.append(Paragraph(f"<b>Bordado Nombre:</b> {orden.get('nombre_bordado', 'N/A')}", estilos["Normal"]))
-    elementos.append(Paragraph(f"<b>Prendas con Nombre:</b> {orden.get('cantidad_nombre', 0)}", estilos["Normal"]))
-    elementos.append(Spacer(1, 10))
+    # 3. Detalle de Prendas
+    elementos.append(Paragraph("DETALLE DE PRENDAS", estilo_seccion))
+    elementos.append(Spacer(1, 8))
 
+    tabla_prendas_datos = [[
+        Paragraph("Colegio", estilo_celda_header),
+        Paragraph("Prenda", estilo_celda_header),
+        Paragraph("Talla", estilo_celda_header),
+        Paragraph("Marca", estilo_celda_header),
+        Paragraph("Color", estilo_celda_header),
+        Paragraph("Cant.", estilo_celda_header)
+    ]]
+
+    if not detalle_orden.empty:
+        for _, fila in detalle_orden.iterrows():
+            tabla_prendas_datos.append([
+                Paragraph(str(fila.get("Colegio", "")), estilo_celda),
+                Paragraph(str(fila.get("Tipo Prenda", "")), estilo_celda_centro),
+                Paragraph(str(fila.get("Talla", "")), estilo_celda_centro),
+                Paragraph(str(fila.get("Marca", "")), estilo_celda_centro),
+                Paragraph(str(fila.get("Color", "")), estilo_celda_centro),
+                Paragraph(str(fila.get("Cantidad", "")), estilo_celda_centro)
+            ])
+
+    tabla_prendas = Table(tabla_prendas_datos, colWidths=[140, 100, 60, 90, 80, 50])
+    tabla_prendas.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1D3557")),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#DEE2E6")),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    elementos.append(tabla_prendas)
+    elementos.append(Spacer(1, 15))
+
+    # 4. Resumen Financiero
     sub_bordado = _safe_float(orden.get("subtotal_bordado"))
     sub_nombres = _safe_float(orden.get("subtotal_nombres"))
     del_costo = _safe_float(orden.get("delivery_costo"))
-    p_bordado = _safe_float(orden.get("precio_bordado"))
     abono = _safe_float(orden.get("abono"))
     saldo = _safe_float(orden.get("saldo_pendiente"))
     total_general = sub_bordado + sub_nombres + del_costo
 
-    tabla_financiera = Table([
-        ["Concepto", "Monto"],
-        ["Precio Bordado Unitario", f"${p_bordado:.2f}"],
-        ["Subtotal Bordado", f"${sub_bordado:.2f}"],
-        ["Subtotal Nombres", f"${sub_nombres:.2f}"],
-        ["Delivery", f"${del_costo:.2f}"],
-        ["Total General", f"${total_general:.2f}"],
-        ["Abono", f"${abono:.2f}"],
-        ["Saldo Pendiente", f"${saldo:.2f}"]
-    ], colWidths=[200, 120])
+    estilo_fin_lbl = ParagraphStyle('FinLbl', parent=estilos['Normal'], fontName='Helvetica', fontSize=10, alignment=2)
+    estilo_fin_val = ParagraphStyle('FinVal', parent=estilos['Normal'], fontName='Helvetica', fontSize=10, alignment=2)
+    estilo_fin_bold_lbl = ParagraphStyle('FinBoldLbl', parent=estilos['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=2)
+    estilo_fin_bold_val = ParagraphStyle('FinBoldVal', parent=estilos['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=2)
 
-    tabla_financiera.setStyle(
-        TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A365D")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#FFF3BF")),
-            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-            ("ALIGN", (1, 0), (1, -1), "RIGHT")
-        ])
-    )
-    elementos.append(Paragraph("<b>RESUMEN FINANCIERO</b>", estilos["Heading3"]))
-    elementos.append(tabla_financiera)
-    elementos.append(Spacer(1, 15))
+    tabla_fin_datos = [
+        [Paragraph("Subtotal Bordados:", estilo_fin_lbl), Paragraph(f"${sub_bordado:.2f}", estilo_fin_val)],
+        [Paragraph("Subtotal Nombres:", estilo_fin_lbl), Paragraph(f"${sub_nombres:.2f}", estilo_fin_val)],
+        [Paragraph("Costo Delivery:", estilo_fin_lbl), Paragraph(f"${del_costo:.2f}", estilo_fin_val)],
+        [Paragraph("TOTAL GENERAL:", estilo_fin_bold_lbl), Paragraph(f"${total_general:.2f}", estilo_fin_bold_val)],
+        [Paragraph("Abonado:", estilo_fin_lbl), Paragraph(f"${abono:.2f}", estilo_fin_val)],
+        [Paragraph("Saldo Pendiente:", estilo_fin_bold_lbl), Paragraph(f"${saldo:.2f}", estilo_fin_bold_val)]
+    ]
 
-    elementos.append(Paragraph("<b>DESGLOSE DE PRENDAS</b>", estilos["Heading3"]))
+    if tasa_cambio > 0:
+        saldo_bs = saldo * tasa_cambio
+        total_bs = total_general * tasa_cambio
+        tabla_fin_datos.append([Paragraph("Tasa BCV/Cambio:", estilo_fin_lbl), Paragraph(f"{tasa_cambio:.2f} Bs.", estilo_fin_val)])
+        tabla_fin_datos.append([Paragraph("Total en Bs.:", estilo_fin_bold_lbl), Paragraph(f"{total_bs:,.2f} Bs.", estilo_fin_bold_val)])
+        tabla_fin_datos.append([Paragraph("Saldo Pendiente en Bs.:", estilo_fin_bold_lbl), Paragraph(f"{saldo_bs:,.2f} Bs.", estilo_fin_bold_val)])
 
-    if not detalle_orden.empty and "Colegio" in detalle_orden.columns:
-        for colegio in detalle_orden["Colegio"].unique():
-            elementos.append(Paragraph(f"🏫 <b>{colegio}</b>", estilos["Heading4"]))
+    tabla_fin = Table(tabla_fin_datos, colWidths=[150, 100])
+    tabla_fin.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('LINEABOVE', (0,3), (1,3), 1, colors.black),
+    ]))
 
-            datos_tabla = [["Tipo Prenda", "Talla", "Marca", "Color", "Cantidad"]]
-            df_colegio = detalle_orden[detalle_orden["Colegio"] == colegio]
+    tabla_contenedor = Table([[ "", tabla_fin ]], colWidths=[270, 250])
+    tabla_contenedor.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
 
-            for _, fila in df_colegio.iterrows():
-                datos_tabla.append([
-                    str(fila.get("Tipo Prenda", "")),
-                    str(fila.get("Talla", "")),
-                    str(fila.get("Marca", "")),
-                    str(fila.get("Color", "")),
-                    str(fila.get("Cantidad", ""))
-                ])
-
-            tabla_prendas = Table(datos_tabla, colWidths=[120, 50, 100, 100, 60])
-            tabla_prendas.setStyle(
-                TableStyle([
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2B6CB0")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-                    ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-                    ("ALIGN", (1, 1), (-1, -1), "CENTER"),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE")
-                ])
-            )
-            elementos.append(tabla_prendas)
-            elementos.append(Spacer(1, 10))
-
-    elementos.append(Spacer(1, 15))
-    elementos.append(Paragraph("<b>Bordaclick Diseños</b>", estilos["Heading3"]))
-    elementos.append(Paragraph("Sistema de Gestión de Bordados Escolares", estilos["Normal"]))
+    elementos.append(tabla_contenedor)
 
     doc.build(elementos)
     return nombre_pdf
@@ -213,8 +238,8 @@ def generar_excel_orden(orden, detalle_orden):
         ("A22", "Subtotal Bordado", _safe_float(orden.get("subtotal_bordado"))),
         ("A23", "Subtotal Nombres", _safe_float(orden.get("subtotal_nombres"))),
         ("A24", "Delivery", _safe_float(orden.get("delivery_costo"))),
-        ("A25", "Abono", _safe_float(orden.get("abono"))),
-        ("A26", "Saldo Pendiente", _safe_float(orden.get("saldo_pendiente")))
+        ("A25", "Abono USD", _safe_float(orden.get("abono"))),
+        ("A26", "Saldo Pendiente USD", _safe_float(orden.get("saldo_pendiente")))
     ]
 
     for c_pos, label, val in datos:
@@ -292,8 +317,8 @@ def generar_excel_historico(df_ordenes):
     fondo_azul_oscuro = PatternFill(fill_type="solid", start_color="1A365D")
     fondo_azul_medio = PatternFill(fill_type="solid", start_color="2B6CB0")
 
-    ws.merge_cells("A1:L1")
-    ws["A1"] = "HISTÓRICO GENERAL DE ÓRDENES Y PAGOS - BORDACLICK"
+    ws.merge_cells("A1:N1")
+    ws["A1"] = "HISTÓRICO GENERAL DE ÓRDENES Y PAGOS EN BOLÍVARES Y DÓLARES - BORDACLICK"
     ws["A1"].font = titulo_blanco
     ws["A1"].fill = fondo_azul_oscuro
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
@@ -301,7 +326,7 @@ def generar_excel_historico(df_ordenes):
     headers = [
         "ID Pedido", "Cliente", "Teléfono", "Correo", "Colegio",
         "Cant. Prendas", "Delivery", "Estado", "Fecha Entrega",
-        "Abonado", "Saldo Pendiente", "Fecha Último Pago"
+        "Abonado ($)", "Saldo Pendiente ($)", "Monto Pago (Bs.)", "Tasa de Cambio", "Fecha Último Pago"
     ]
 
     for col_idx, header in enumerate(headers, 1):
@@ -310,8 +335,11 @@ def generar_excel_historico(df_ordenes):
         cell.fill = fondo_azul_medio
         cell.alignment = Alignment(horizontal="center")
 
+    conn = sqlite3.connect(DATABASE)
+
     for row_idx, fila in enumerate(df_ordenes.to_dict(orient="records"), start=4):
-        ws.cell(row=row_idx, column=1, value=f"#{int(fila.get('id', 0)):04d}")
+        orden_id = int(fila.get('id', 0))
+        ws.cell(row=row_idx, column=1, value=f"#{orden_id:04d}")
         ws.cell(row=row_idx, column=2, value=str(fila.get("nombre", "")))
         ws.cell(row=row_idx, column=3, value=str(fila.get("telefono", "")))
         ws.cell(row=row_idx, column=4, value=str(fila.get("correo", "")))
@@ -327,11 +355,25 @@ def generar_excel_historico(df_ordenes):
         celda_saldo = ws.cell(row=row_idx, column=11, value=_safe_float(fila.get("saldo_pendiente")))
         celda_saldo.number_format = "$#,##0.00"
 
-        fecha_pago_val = str(fila.get("fecha_pago", "Sin pagos")) if fila.get("fecha_pago") else "Sin pagos"
-        ws.cell(row=row_idx, column=12, value=fecha_pago_val)
+        # Cargar los datos específicos del pago registrado en Bolívares
+        df_pago = pd.read_sql_query(f"SELECT monto_bs, tasa_cambio FROM historico_pagos WHERE orden_id = {orden_id} ORDER BY id DESC LIMIT 1", conn)
+        
+        monto_bs_val = df_pago["monto_bs"].iloc[0] if not df_pago.empty else 0.0
+        tasa_val = df_pago["tasa_cambio"].iloc[0] if not df_pago.empty else 0.0
 
-    columnas = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
-    anchos = [12, 25, 15, 25, 25, 14, 12, 18, 15, 15, 15, 18]
+        celda_bs = ws.cell(row=row_idx, column=12, value=_safe_float(monto_bs_val))
+        celda_bs.number_format = "Bs.#,##0.00"
+
+        celda_tasa = ws.cell(row=row_idx, column=13, value=_safe_float(tasa_val))
+        celda_tasa.number_format = "#,##0.00"
+
+        fecha_pago_val = str(fila.get("fecha_pago", "Sin pagos")) if fila.get("fecha_pago") else "Sin pagos"
+        ws.cell(row=row_idx, column=14, value=fecha_pago_val)
+
+    conn.close()
+
+    columnas = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"]
+    anchos = [12, 25, 15, 25, 25, 14, 12, 18, 15, 15, 15, 18, 15, 18]
     for col, ancho in zip(columnas, anchos):
         ws.column_dimensions[col].width = ancho
 

@@ -102,6 +102,18 @@ def crear_bd():
     )
     """)    
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_pagos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        orden_id INTEGER,
+        monto_usd REAL,
+        tasa_cambio REAL,
+        monto_bs REAL,
+        fecha TEXT,
+        FOREIGN KEY (orden_id) REFERENCES ordenes(id)
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -165,9 +177,10 @@ def obtener_parametro(parametro):
     cursor.execute("SELECT valor FROM configuracion_general WHERE parametro = ?", (parametro,))
     resultado = cursor.fetchone()
     conn.close()
-    return resultado[0] if resultado else 0
+    return resultado[0] if resultado else 0.0
 
 
+# --- GESTIÓN DE COLEGIOS ---
 def guardar_colegio(nombre, precio_bordado):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -175,13 +188,11 @@ def guardar_colegio(nombre, precio_bordado):
     conn.commit()
     conn.close()
 
-
 def obtener_colegios():
     conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query("SELECT nombre, precio_bordado FROM colegios ORDER BY nombre", conn)
+    df = pd.read_sql_query("SELECT id, nombre, precio_bordado FROM colegios ORDER BY nombre", conn)
     conn.close()
     return df
-
 
 def obtener_precio_colegio(nombre):
     conn = sqlite3.connect(DATABASE)
@@ -189,9 +200,17 @@ def obtener_precio_colegio(nombre):
     cursor.execute("SELECT precio_bordado FROM colegios WHERE nombre = ?", (nombre,))
     resultado = cursor.fetchone()
     conn.close()
-    return resultado[0] if resultado else 0
+    return resultado[0] if resultado else 0.0
+
+def eliminar_colegio(id_col):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM colegios WHERE id = ?", (id_col,))
+    conn.commit()
+    conn.close()
 
 
+# --- GESTIÓN DE DELIVERY ---
 def guardar_zona_delivery(nombre, costo):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -199,13 +218,11 @@ def guardar_zona_delivery(nombre, costo):
     conn.commit()
     conn.close()
 
-
 def obtener_zonas_delivery():
     conn = sqlite3.connect(DATABASE)
     df = pd.read_sql_query("SELECT nombre, costo FROM zonas_delivery ORDER BY nombre", conn)
     conn.close()
     return df
-
 
 def obtener_costo_delivery(nombre):
     conn = sqlite3.connect(DATABASE)
@@ -213,25 +230,114 @@ def obtener_costo_delivery(nombre):
     cursor.execute("SELECT costo FROM zonas_delivery WHERE nombre = ?", (nombre,))
     resultado = cursor.fetchone()
     conn.close()
-    return resultado[0] if resultado else 0
+    return resultado[0] if resultado else 0.0
+
+def eliminar_zona_delivery(nombre):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM zonas_delivery WHERE nombre = ?", (nombre,))
+    conn.commit()
+    conn.close()
 
 
+# --- GESTIÓN DE CATÁLOGOS GENÉRICOS ---
+def guardar_tipo_prenda(nombre):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO tipos_prenda (nombre) VALUES (?)", (nombre,))
+    conn.commit()
+    conn.close()
+
+def obtener_tipos_prenda():
+    conn = sqlite3.connect(DATABASE)
+    df = pd.read_sql_query("SELECT id, nombre FROM tipos_prenda ORDER BY nombre", conn)
+    conn.close()
+    return df
+
+def eliminar_tipo_prenda(id_item):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tipos_prenda WHERE id = ?", (id_item,))
+    conn.commit()
+    conn.close()
+
+def guardar_marca(nombre):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO marcas (nombre) VALUES (?)", (nombre,))
+    conn.commit()
+    conn.close()
+
+def obtener_marcas():
+    conn = sqlite3.connect(DATABASE)
+    df = pd.read_sql_query("SELECT id, nombre FROM marcas ORDER BY nombre", conn)
+    conn.close()
+    return df
+
+def eliminar_marca(id_item):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM marcas WHERE id = ?", (id_item,))
+    conn.commit()
+    conn.close()
+
+def guardar_color(nombre):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO colores (nombre) VALUES (?)", (nombre,))
+    conn.commit()
+    conn.close()
+
+def obtener_colores():
+    conn = sqlite3.connect(DATABASE)
+    df = pd.read_sql_query("SELECT id, nombre FROM colores ORDER BY nombre", conn)
+    conn.close()
+    return df
+
+def eliminar_color(id_item):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM colores WHERE id = ?", (id_item,))
+    conn.commit()
+    conn.close()
+
+def guardar_talla(nombre):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO tallas (nombre) VALUES (?)", (nombre,))
+    conn.commit()
+    conn.close()
+
+def obtener_tallas():
+    conn = sqlite3.connect(DATABASE)
+    df = pd.read_sql_query("SELECT id, nombre FROM tallas ORDER BY nombre", conn)
+    conn.close()
+    return df
+
+def eliminar_talla(id_item):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM tallas WHERE id = ?", (id_item,))
+    conn.commit()
+    conn.close()
+
+
+# --- CONSULTAS DE ÓRDENES Y PAGOS ---
 def obtener_ordenes():
     conn = sqlite3.connect(DATABASE)
     df = pd.read_sql_query("""
-    SELECT id, nombre, telefono, correo, colegio, cantidad_total, delivery, zona_delivery, status, fecha_entrega, abono, saldo_pendiente, fecha_pago
+    SELECT id, nombre, telefono, correo, colegio, cantidad_total, delivery, zona_delivery, status, fecha_entrega, abono, saldo_pendiente, fecha_pago,
+           subtotal_bordado, subtotal_nombres, delivery_costo, tipo_logo, nombre_bordado, cantidad_nombre
     FROM ordenes ORDER BY id DESC
     """, conn)
     conn.close()
     return df
-
 
 def obtener_orden_por_id(orden_id):
     conn = sqlite3.connect(DATABASE)
     df = pd.read_sql_query(f"SELECT * FROM ordenes WHERE id = {int(orden_id)}", conn)
     conn.close()
     return df
-
 
 def obtener_detalle_orden(orden_id):
     conn = sqlite3.connect(DATABASE)
@@ -243,24 +349,47 @@ def obtener_detalle_orden(orden_id):
     conn.close()
     return df
 
-
-def registrar_pago(orden_id, monto_pago):
+def registrar_pago(orden_id, monto_pago_usd, tasa_cambio=0.0):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
+    
+    # Si no nos pasan una tasa, buscamos la que está guardada globalmente
+    if tasa_cambio <= 0:
+        cursor.execute("SELECT valor FROM configuracion_general WHERE parametro = 'tasa_cambio'")
+        res_tasa = cursor.fetchone()
+        tasa_cambio = res_tasa[0] if res_tasa else 0.0
+
     cursor.execute("SELECT abono, saldo_pendiente FROM ordenes WHERE id = ?", (orden_id,))
     resultado = cursor.fetchone()
 
     abono_actual, saldo_actual = resultado[0], resultado[1]
-    nuevo_abono = abono_actual + monto_pago
-    nuevo_saldo = max(0.0, saldo_actual - monto_pago)
+    nuevo_abono = abono_actual + monto_pago_usd
+    nuevo_saldo = max(0.0, saldo_actual - monto_pago_usd)
     fecha_actual = str(date.today())
 
     cursor.execute("""
         UPDATE ordenes SET abono = ?, saldo_pendiente = ?, fecha_pago = ? WHERE id = ?
     """, (nuevo_abono, nuevo_saldo, fecha_actual, orden_id))
+
+    # Guardar SIEMPRE en el histórico de pagos con el cálculo equivalente en Bs.
+    monto_bs = round(monto_pago_usd * tasa_cambio, 2)
+    cursor.execute("""
+        INSERT INTO historico_pagos (orden_id, monto_usd, tasa_cambio, monto_bs, fecha)
+        VALUES (?, ?, ?, ?, ?)
+    """, (orden_id, monto_pago_usd, tasa_cambio, monto_bs, fecha_actual))
+
     conn.commit()
     conn.close()
 
+def obtener_historico_pagos(orden_id=None):
+    conn = sqlite3.connect(DATABASE)
+    if orden_id:
+        query = f"SELECT * FROM historico_pagos WHERE orden_id = {int(orden_id)} ORDER BY id DESC"
+    else:
+        query = "SELECT * FROM historico_pagos ORDER BY id DESC"
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
 
 def actualizar_status_orden(orden_id, status):
     conn = sqlite3.connect(DATABASE)
@@ -270,61 +399,7 @@ def actualizar_status_orden(orden_id, status):
     conn.close()
 
 
-def guardar_tipo_prenda(nombre):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO tipos_prenda (nombre) VALUES (?)", (nombre,))
-    conn.commit()
-    conn.close()
-
-def obtener_tipos_prenda():
-    conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query("SELECT nombre FROM tipos_prenda ORDER BY nombre", conn)
-    conn.close()
-    return df
-
-def guardar_marca(nombre):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO marcas (nombre) VALUES (?)", (nombre,))
-    conn.commit()
-    conn.close()
-
-def obtener_marcas():
-    conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query("SELECT nombre FROM marcas ORDER BY nombre", conn)
-    conn.close()
-    return df
-
-def guardar_color(nombre):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO colores (nombre) VALUES (?)", (nombre,))
-    conn.commit()
-    conn.close()
-
-def obtener_colores():
-    conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query("SELECT nombre FROM colores ORDER BY nombre", conn)
-    conn.close()
-    return df
-
-def guardar_talla(nombre):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR REPLACE INTO tallas (nombre) VALUES (?)", (nombre,))
-    conn.commit()
-    conn.close()
-
-def obtener_tallas():
-    conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query("SELECT nombre FROM tallas ORDER BY nombre", conn)
-    conn.close()
-    return df
-
-
-# --- Envíos de Correo ---
-
+# --- ENVIOS DE CORREO ---
 def enviar_confirmacion_solicitud(destinatario, nombre_cliente, orden_id, fecha_entrega):
     remitente = "bordaclick@gmail.com"
     password = "niiv nskd qzox xwnr"
@@ -358,7 +433,6 @@ Equipo Bordaclick
     except Exception as e:
         print(f"❌ Error Gmail: {e}")
         raise
-
 
 def enviar_pdf_por_correo(destinatario, nombre_cliente, orden_id, fecha_entrega, pdf_path):
     remitente = "bordaclick@gmail.com"
@@ -399,7 +473,6 @@ Equipo Bordaclick
     except Exception as e:
         print(f"❌ Error Gmail: {e}")
         raise
-
 
 def enviar_notificacion_estado(destinatario, nombre_cliente, orden_id, fecha_entrega, estado, delivery):
     remitente = "bordaclick@gmail.com"
