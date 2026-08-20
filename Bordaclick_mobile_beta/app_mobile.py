@@ -98,7 +98,7 @@ st.divider()
 
 if pagina == "📝 Nueva Solicitud":
 
-    # --- PASO 1: Datos de Contacto ---
+    # --- PASO 1: Datos de Contacto ---#
     if st.session_state.paso == 1:
         st.progress(25)
         st.subheader("👤 Datos del Cliente")
