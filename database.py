@@ -1391,9 +1391,7 @@ def guardar_detalle_orden_db(pedido_id, df_prendas):
         ))
         
     conn.commit()
-    conn.close()    
-    
-   
+    conn.close()     
 
     
 
