@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit as st
 from datetime import date, timedelta
 
 from db_handler import (
@@ -58,7 +59,7 @@ clave_admin = st.sidebar.text_input("Clave Administrador", type="password")
 
 opciones_menu = ["📝 Nueva Solicitud"]
 
-if clave_admin == "BordaAdmin2026*":
+if clave_admin == st.secrets["ADMIN_KEY"]:
     opciones_menu.extend([
         "📋 Consultas",
         "⚙️ Configuración",

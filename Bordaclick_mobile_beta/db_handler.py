@@ -1,6 +1,8 @@
 import sqlite3
 import pandas as pd
 import smtplib
+import os
+import streamlit as st
 from datetime import date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -8,6 +10,10 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 DATABASE = "bordaclick_dev.db"
+
+# Usamos variables de entorno para proteger contraseñas sensibles
+GMAIL_USER = st.secrets["GMAIL_USER"]
+GMAIL_PASS = st.secrets["GMAIL_PASS"]
 
 def crear_bd():
     conn = sqlite3.connect(DATABASE)
@@ -180,7 +186,7 @@ def obtener_parametro(parametro):
     return resultado[0] if resultado else 0.0
 
 
-# --- GESTIÓN DE COLEGIOS ---#
+# --- GESTIÓN DE COLEGIOS ---
 def guardar_colegio(nombre, precio_bordado):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -322,7 +328,7 @@ def eliminar_talla(id_item):
     conn.close()
 
 
-# --- CONSULTAS DE ÓRDENES Y PAGOS ---
+# --- CONSULTAS DE ÓRDENES Y PAGOS (Corregidas para evitar SQL Injection) ---
 def obtener_ordenes():
     conn = sqlite3.connect(DATABASE)
     df = pd.read_sql_query("""
@@ -335,16 +341,16 @@ def obtener_ordenes():
 
 def obtener_orden_por_id(orden_id):
     conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query(f"SELECT * FROM ordenes WHERE id = {int(orden_id)}", conn)
+    df = pd.read_sql_query("SELECT * FROM ordenes WHERE id = ?", conn, params=(int(orden_id),))
     conn.close()
     return df
 
 def obtener_detalle_orden(orden_id):
     conn = sqlite3.connect(DATABASE)
-    df = pd.read_sql_query(f"""
+    df = pd.read_sql_query("""
     SELECT colegio, tipo_prenda, talla, marca, color, cantidad
-    FROM orden_detalle WHERE orden_id = {int(orden_id)}
-    """, conn)
+    FROM orden_detalle WHERE orden_id = ?
+    """, conn, params=(int(orden_id),))
     df.columns = ["Colegio", "Tipo Prenda", "Talla", "Marca", "Color", "Cantidad"]
     conn.close()
     return df
@@ -353,7 +359,6 @@ def registrar_pago(orden_id, monto_pago_usd, tasa_cambio=0.0):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     
-    # Si no nos pasan una tasa, buscamos la que está guardada globalmente
     if tasa_cambio <= 0:
         cursor.execute("SELECT valor FROM configuracion_general WHERE parametro = 'tasa_cambio'")
         res_tasa = cursor.fetchone()
@@ -371,7 +376,6 @@ def registrar_pago(orden_id, monto_pago_usd, tasa_cambio=0.0):
         UPDATE ordenes SET abono = ?, saldo_pendiente = ?, fecha_pago = ? WHERE id = ?
     """, (nuevo_abono, nuevo_saldo, fecha_actual, orden_id))
 
-    # Guardar SIEMPRE en el histórico de pagos con el cálculo equivalente en Bs.
     monto_bs = round(monto_pago_usd * tasa_cambio, 2)
     cursor.execute("""
         INSERT INTO historico_pagos (orden_id, monto_usd, tasa_cambio, monto_bs, fecha)
@@ -384,10 +388,9 @@ def registrar_pago(orden_id, monto_pago_usd, tasa_cambio=0.0):
 def obtener_historico_pagos(orden_id=None):
     conn = sqlite3.connect(DATABASE)
     if orden_id:
-        query = f"SELECT * FROM historico_pagos WHERE orden_id = {int(orden_id)} ORDER BY id DESC"
+        df = pd.read_sql_query("SELECT * FROM historico_pagos WHERE orden_id = ? ORDER BY id DESC", conn, params=(int(orden_id),))
     else:
-        query = "SELECT * FROM historico_pagos ORDER BY id DESC"
-    df = pd.read_sql_query(query, conn)
+        df = pd.read_sql_query("SELECT * FROM historico_pagos ORDER BY id DESC", conn)
     conn.close()
     return df
 
@@ -401,11 +404,8 @@ def actualizar_status_orden(orden_id, status):
 
 # --- ENVIOS DE CORREO ---
 def enviar_confirmacion_solicitud(destinatario, nombre_cliente, orden_id, fecha_entrega):
-    remitente = "bordaclick@gmail.com"
-    password = "niiv nskd qzox xwnr"
-
     mensaje = MIMEMultipart()
-    mensaje["From"] = remitente
+    mensaje["From"] = GMAIL_USER
     mensaje["To"] = destinatario
     mensaje["Subject"] = f"Bordaclick - Solicitud Recibida #{orden_id:04d}"
 
@@ -427,7 +427,7 @@ Equipo Bordaclick
     servidor = smtplib.SMTP("smtp.gmail.com", 587)
     servidor.starttls()
     try:
-        servidor.login(remitente, password)
+        servidor.login(GMAIL_USER, GMAIL_PASS)
         servidor.send_message(mensaje)
         servidor.quit()
     except Exception as e:
@@ -435,11 +435,8 @@ Equipo Bordaclick
         raise
 
 def enviar_pdf_por_correo(destinatario, nombre_cliente, orden_id, fecha_entrega, pdf_path):
-    remitente = "bordaclick@gmail.com"
-    password = "niiv nskd qzox xwnr"
-
     mensaje = MIMEMultipart()
-    mensaje["From"] = remitente
+    mensaje["From"] = GMAIL_USER
     mensaje["To"] = destinatario
     mensaje["Subject"] = f"Bordaclick - Confirmación de Pedido #{orden_id:04d}"
 
@@ -467,7 +464,7 @@ Equipo Bordaclick
     servidor = smtplib.SMTP("smtp.gmail.com", 587)
     servidor.starttls()
     try:
-        servidor.login(remitente, password)
+        servidor.login(GMAIL_USER, GMAIL_PASS)
         servidor.send_message(mensaje)
         servidor.quit()
     except Exception as e:
@@ -475,11 +472,8 @@ Equipo Bordaclick
         raise
 
 def enviar_notificacion_estado(destinatario, nombre_cliente, orden_id, fecha_entrega, estado, delivery):
-    remitente = "bordaclick@gmail.com"
-    password = "niiv nskd qzox xwnr"
-
     mensaje = MIMEMultipart()
-    mensaje["From"] = remitente
+    mensaje["From"] = GMAIL_USER
     mensaje["To"] = destinatario
 
     if estado == "En Producción":
@@ -499,6 +493,6 @@ def enviar_notificacion_estado(destinatario, nombre_cliente, orden_id, fecha_ent
 
     servidor = smtplib.SMTP("smtp.gmail.com", 587)
     servidor.starttls()
-    servidor.login(remitente, password)
+    servidor.login(GMAIL_USER, GMAIL_PASS)
     servidor.send_message(mensaje)
     servidor.quit()
