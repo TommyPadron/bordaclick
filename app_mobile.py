@@ -1,8 +1,17 @@
+# ==============================================================================
+# BORDACLICK - APLICACIÓN MÓVIL (ENTORNO DEV)
+# Archivo Principal: app_mobile.py
+# Descripción: Interfaz web en Streamlit para toma de pedidos y panel de administración.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. IMPORTACIÓN DE LIBRERÍAS Y MÓDULOS DEL PROYECTO
+# ------------------------------------------------------------------------------
 import streamlit as st
 import pandas as pd
-import streamlit as st
 from datetime import date, timedelta
 
+# Funciones de la base de datos (SQLite)
 from db_handler import (
     crear_bd,
     obtener_colegios,
@@ -40,26 +49,36 @@ from db_handler import (
     enviar_notificacion_estado
 )
 
+# Generación de reportes PDF y Excel
 from pdf_tools import (
     generar_pdf_orden,
     generar_excel_orden,
     generar_excel_historico
 )
 
-# Inicializar Base de Datos de Desarrollo al arrancar
+# ------------------------------------------------------------------------------
+# 2. INICIALIZACIÓN DE BASE DE DATOS Y CONFIGURACIÓN DE PÁGINA
+# ------------------------------------------------------------------------------
+# Se asegura de que la base de datos sqlite exista antes de cargar la interfaz
 crear_bd()
 
+# Configuración visual de la ventana y pestaña del navegador
 st.set_page_config(
     page_title="Bordaclick Clientes (DEV)",
     page_icon="🧵",
     layout="centered"
 )
 
+# ------------------------------------------------------------------------------
+# 3. CONTROL DE ACCESO (ADMINISTRADOR) Y BARRA LATERAL
+# ------------------------------------------------------------------------------
 clave_admin = st.sidebar.text_input("Clave Administrador", type="password")
 
+# Opciones visibles para clientes generales
 opciones_menu = ["📝 Nueva Solicitud"]
 
-if clave_admin == st.secrets["ADMIN_KEY"]:
+# Habilita los módulos de gestión si la clave es correcta
+if clave_admin == "BordaAdmin2026*":
     opciones_menu.extend([
         "📋 Consultas",
         "⚙️ Configuración",
@@ -74,16 +93,21 @@ if clave_admin == st.secrets["ADMIN_KEY"]:
 
 pagina = st.sidebar.selectbox("Menú", opciones_menu)
 
+# ------------------------------------------------------------------------------
+# 4. MEMORIA DE SESIÓN (SESSION STATE)
+# ------------------------------------------------------------------------------
 if "paso" not in st.session_state:
-    st.session_state.paso = 1
+    st.session_state.paso = 1  # Controla el paso actual del formulario (1 al 4)
 
 if "solicitud_enviada" not in st.session_state:
     st.session_state.solicitud_enviada = False
 
 if "colegios_agregados" not in st.session_state:
-    st.session_state.colegios_agregados = []
+    st.session_state.colegios_agregados = []  # Almacena colegios y prendas agregadas
 
-# Encabezado
+# ------------------------------------------------------------------------------
+# 5. ENCABEZADO PRINCIPAL DE LA APLICACIÓN
+# ------------------------------------------------------------------------------
 col1, col2 = st.columns([1, 3])
 with col1:
     try:
@@ -97,9 +121,15 @@ with col2:
 
 st.divider()
 
+# ==============================================================================
+# MÓDULO 1: FORMULARIO CLIENTE (NUEVA SOLICITUD EN 4 PASOS)
+# ==============================================================================
 if pagina == "📝 Nueva Solicitud":
 
-    # --- PASO 1: Datos de Contacto ---#
+    # --------------------------------------------------------------------------
+    # PASO 1: DATOS DEL CLIENTE
+    # Captura información de contacto básica y valida su formato.
+    # --------------------------------------------------------------------------
     if st.session_state.paso == 1:
         st.progress(25)
         st.subheader("👤 Datos del Cliente")
@@ -122,11 +152,15 @@ if pagina == "📝 Nueva Solicitud":
                 st.session_state.paso = 2
                 st.rerun()
 
-    # --- PASO 2: Selección de Colegios y Prendas ---
+    # --------------------------------------------------------------------------
+    # PASO 2: SELECCIÓN DE COLEGIO Y PRENDAS
+    # Permite añadir prendas a una lista temporal y agruparlas por colegio.
+    # --------------------------------------------------------------------------
     elif st.session_state.paso == 2:
         st.progress(50)
         st.subheader("🏫 Colegio y Prendas")
 
+        # Cargar lista de colegios desde la base de datos
         df_col = obtener_colegios()
         lista_colegios = ["Seleccione un colegio..."] + (df_col["nombre"].dropna().tolist() if not df_col.empty else [])
         colegio = st.selectbox("Seleccione el Colegio", lista_colegios)
@@ -134,6 +168,7 @@ if pagina == "📝 Nueva Solicitud":
         st.divider()
         st.subheader("👕 Agregar Prenda")
 
+        # Cargar catálogos dinámicos
         df_p = obtener_tipos_prenda()
         lista_tipos_prenda = ["Seleccione una prenda..."] + (df_p["nombre"].dropna().tolist() if not df_p.empty else [])
 
@@ -146,6 +181,7 @@ if pagina == "📝 Nueva Solicitud":
         df_c = obtener_colores()
         lista_colores = ["Seleccione un color..."] + (df_c["nombre"].dropna().tolist() if not df_c.empty else [])
 
+        # Selección de atributos de la prenda
         tipo_prenda = st.selectbox("Tipo de Prenda", lista_tipos_prenda, key="tipo_prenda_actual")
         talla = st.selectbox("Talla", lista_tallas, key="talla_actual")
         marca = st.selectbox("Marca", lista_marcas, key="marca_actual")
@@ -155,6 +191,7 @@ if pagina == "📝 Nueva Solicitud":
         if "prendas_actuales" not in st.session_state:
             st.session_state.prendas_actuales = []
 
+        # Botón para añadir la prenda a la lista en memoria
         if st.button("➕ Agregar Prenda", use_container_width=True):
             if colegio == "Seleccione un colegio...":
                 st.error("Debe seleccionar un colegio.")
@@ -179,6 +216,7 @@ if pagina == "📝 Nueva Solicitud":
         st.divider()
         st.subheader("📋 Revise las prendas antes de guardar el colegio")
 
+        # Visualización y eliminación de prendas temporales
         if not st.session_state.prendas_actuales:
             st.info("Aún no hay prendas agregadas para el colegio actual.")
         else:
@@ -193,6 +231,7 @@ if pagina == "📝 Nueva Solicitud":
 
         st.divider()
 
+        # Botón para empaquetar las prendas bajo el colegio seleccionado
         if st.button("💾 Guardar Colegio", use_container_width=True):
             if not st.session_state.prendas_actuales:
                 st.error("Debe agregar al menos una prenda.")
@@ -208,6 +247,7 @@ if pagina == "📝 Nueva Solicitud":
                     st.success("✅ Colegio guardado correctamente")
                     st.rerun()
 
+        # Resumen de colegios ya guardados
         st.subheader("🏫 Colegios Agregados")
         if not st.session_state.colegios_agregados:
             st.info("Aún no hay colegios guardados.")
@@ -237,7 +277,10 @@ if pagina == "📝 Nueva Solicitud":
                     st.session_state.paso = 3
                     st.rerun()
 
-    # --- PASO 3: Personalización de Bordado y Delivery ---
+    # --------------------------------------------------------------------------
+    # PASO 3: BORDADO Y DELIVERY
+    # Define especificaciones del logo, bordado de nombres y zona de entrega.
+    # --------------------------------------------------------------------------
     elif st.session_state.paso == 3:
         st.progress(75)
         st.subheader("🧵 Bordado y Delivery")
@@ -298,7 +341,10 @@ if pagina == "📝 Nueva Solicitud":
                     st.session_state.paso = 4
                     st.rerun()
 
-    # --- PASO 4: Resumen y Confirmación ---
+    # --------------------------------------------------------------------------
+    # PASO 4: RESUMEN Y CONFIRMACIÓN DE PEDIDO
+    # Muestra los totales finales, aplica promociones y guarda en BD.
+    # --------------------------------------------------------------------------
     elif st.session_state.paso == 4:
         st.progress(100)
         st.subheader("📋 Resumen de la Solicitud")
@@ -313,6 +359,7 @@ if pagina == "📝 Nueva Solicitud":
             st.write(f"Detalle: {st.session_state.nombre_bordado}")
             st.write(f"Cantidad: {st.session_state.cantidad_nombre}")
 
+        # Cálculo automático de la fecha estimada de entrega
         dias_produccion = int(obtener_parametro("dias_produccion") or 3)
         fecha_entrega = date.today() + timedelta(days=dias_produccion)
 
@@ -325,6 +372,7 @@ if pagina == "📝 Nueva Solicitud":
             cantidad_colegio = sum(p["cantidad"] for p in colegio_data["prendas"])
             precio_colegio = obtener_precio_colegio(colegio_nombre)
 
+            # Promoción: Descuento de $0.50 por prenda si el pedido por colegio suma 6 o más
             if cantidad_colegio >= 6:
                 precio_colegio = max(0.0, precio_colegio - 0.50)
 
@@ -334,6 +382,7 @@ if pagina == "📝 Nueva Solicitud":
             st.write(f"🏫 {colegio_nombre} {'(🎉 Promo desc. 6+ prendas)' if cantidad_colegio >= 6 else ''}")
             st.write(f"   👕 {cantidad_colegio} prendas x ${precio_colegio:.2f} = ${subtotal_colegio:.2f}")
 
+        # Cálculo de adicionales (nombres y delivery)
         precio_nombre = float(obtener_parametro("precio_nombre") or 0)
         subtotal_nombres = (st.session_state.cantidad_nombre * precio_nombre) if st.session_state.bordar_nombre == "Sí" else 0.0
 
@@ -351,10 +400,12 @@ if pagina == "📝 Nueva Solicitud":
                 st.session_state.paso = 3
                 st.rerun()
         with col2:
+            # Confirmación final y escritura en SQLite
             if st.button("✅ Confirmar Solicitud", key="confirmar_solicitud_mobile", use_container_width=True, disabled=st.session_state.solicitud_enviada):
                 colegio_orden = "Múltiples Colegios" if len(st.session_state.colegios_agregados) > 1 else st.session_state.colegios_agregados[0]["colegio"]
                 cantidad_total = sum(p["cantidad"] for c in st.session_state.colegios_agregados for p in c["prendas"])
 
+                # Guardar cabecera de la orden
                 orden_id = guardar_orden(
                     st.session_state.nombre,
                     st.session_state.telefono,
@@ -376,6 +427,7 @@ if pagina == "📝 Nueva Solicitud":
                     "Recibido"
                 )
 
+                # Guardar líneas de detalle de la orden
                 for colegio_data in st.session_state.colegios_agregados:
                     for prenda in colegio_data["prendas"]:
                         guardar_detalle(
@@ -388,6 +440,7 @@ if pagina == "📝 Nueva Solicitud":
                             int(prenda["cantidad"])
                         )
 
+                # Notificación automática por correo
                 try:
                     enviar_confirmacion_solicitud(
                         st.session_state.correo,
@@ -411,7 +464,9 @@ if pagina == "📝 Nueva Solicitud":
                 st.session_state.clear()
                 st.rerun()
 
-# --- MÓDULOS DE ADMINISTRACIÓN ---
+# ==============================================================================
+# MÓDULO 2: CONSULTA DE ÓRDENES Y GESTIÓN ADMINISTRATIVA
+# ==============================================================================
 elif pagina == "📋 Consultas":
     st.title("📋 Consulta de Órdenes")
     df_ordenes = obtener_ordenes()
@@ -419,6 +474,7 @@ elif pagina == "📋 Consultas":
     if df_ordenes.empty:
         st.info("ℹ️ No hay órdenes registradas en la base de datos.")
     else:
+        # Descargar histórico masivo en Excel
         excel_hist_file = generar_excel_historico(df_ordenes)
         with open(excel_hist_file, "rb") as f:
             st.download_button(
@@ -432,20 +488,48 @@ elif pagina == "📋 Consultas":
 
         st.divider()
 
+        # Tabla resumen con listado de órdenes
         df_consulta = df_ordenes[["id", "nombre", "colegio", "status", "fecha_entrega", "saldo_pendiente", "fecha_pago"]].copy()
         df_consulta.columns = ["ID", "Cliente", "Colegio", "Estado", "Entrega", "Saldo", "Último Pago"]
         st.dataframe(df_consulta, use_container_width=True)
 
+        # Seleccionar orden individual para gestionar
         pedido_id = st.selectbox("Seleccione un pedido", df_ordenes["id"].tolist())
         st.info(f"📦 Pedido seleccionado: #{pedido_id:04d}")
 
         pedido = obtener_orden_por_id(pedido_id).iloc[0]
         st.write(f"👤 {pedido['nombre']} | 📞 {pedido['telefono']} | 📧 {pedido['correo']}")
 
+        # ----------------------------------------------------------------------
+        # SECCIÓN DE CONSULTAS: DETALLE DE PRENDAS DEL PEDIDO SELECCIONADO
+        # ----------------------------------------------------------------------
         detalle_orden = obtener_detalle_orden(pedido_id)
-        with st.expander("👕 Prendas"):
-            st.dataframe(detalle_orden, use_container_width=True)
+        with st.expander("👕 Prendas", expanded=True):
+            if not detalle_orden.empty:
+                # 1. Muestra la tabla de prendas en la interfaz
+                st.dataframe(detalle_orden, use_container_width=True)
+                
+                # 2. Identifica la columna de cantidad dinámicamente (independiente de mayúsculas/minúsculas)
+                col_cantidad = next((col for col in detalle_orden.columns if col.lower() == "cantidad"), None)
+                
+                if col_cantidad:
+                    # 3. Calcula el total acumulado de prendas usando la columna encontrada
+                    total_prendas_pedido = int(pd.to_numeric(detalle_orden[col_cantidad], errors="coerce").fillna(0).sum())
+                    
+                    # 4. Despliega el total de prendas en pantalla
+                    st.metric(
+                        label="Total de prendas en este pedido",
+                        value=f"{total_prendas_pedido} unidades"
+                    )
+                else:
+                    st.warning("No se encontró la columna de cantidad en el detalle del pedido.")
+            else:
+                st.info("No hay prendas registradas para este pedido.")
 
+
+        # ----------------------------------------------------------------------
+        # SECCIÓN DE CONSULTAS: REGISTRO DE PAGOS Y TASA DE CAMBIO (USD / BS)
+        # ----------------------------------------------------------------------
         with st.expander("💰 Pagos y Tasa de Cambio (USD / Bs.)"):
             saldo = float(pedido.get("saldo_pendiente", 0))
             st.metric("Saldo Pendiente ($ USD)", f"${saldo:.2f}")
@@ -481,12 +565,15 @@ elif pagina == "📋 Consultas":
                     st.success("✅ Pago y registro en Bolívares guardados correctamente.")
                     st.rerun()
 
-            # Mostrar histórico de pagos de esta orden en Bs.
+            # Mostrar histórico de pagos efectuados
             df_hist_pagos = obtener_historico_pagos(pedido_id)
             if not df_hist_pagos.empty:
                 st.subheader("📜 Histórico de Pagos en Bolívares")
                 st.dataframe(df_hist_pagos[["monto_usd", "tasa_cambio", "monto_bs", "fecha"]], use_container_width=True)
 
+        # ----------------------------------------------------------------------
+        # SECCIÓN DE CONSULTAS: GENERACIÓN DE DOCUMENTOS (PDF / EXCEL)
+        # ----------------------------------------------------------------------
         with st.expander("📄 Documentos"):
             tasa_doc = st.number_input("Tasa para Comprobante PDF (Opcional)", min_value=0.0, value=float(obtener_parametro("tasa_cambio") or 0.0), step=0.10, key=f"tasa_pdf_{pedido_id}")
             
@@ -500,12 +587,18 @@ elif pagina == "📋 Consultas":
                 with open(excel_file, "rb") as f:
                     st.download_button("📥 Descargar Excel Pedido", f, file_name=excel_file, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
+        # ----------------------------------------------------------------------
+        # SECCIÓN DE CONSULTAS: REENVÍO DE CORREOS
+        # ----------------------------------------------------------------------
         with st.expander("📧 Comunicaciones"):
             if st.button("📧 Reenviar Correo"):
                 pdf_file = generar_pdf_orden(pedido, detalle_orden)
                 enviar_pdf_por_correo(pedido["correo"], pedido["nombre"], pedido["id"], pedido["fecha_entrega"], pdf_file)
                 st.success("✅ Correo reenviado")
 
+        # ----------------------------------------------------------------------
+        # SECCIÓN DE CONSULTAS: ACTUALIZACIÓN DE ESTADO Y ESTATUS EN PRODUCCIÓN
+        # ----------------------------------------------------------------------
         with st.expander("🏭 Producción"):
             nuevo_estado = st.selectbox("Cambiar estado", ["Recibido", "En Producción", "Listo para Entrega", "Anulado"])
             if st.button("🔄 Actualizar Estado"):
@@ -514,6 +607,9 @@ elif pagina == "📋 Consultas":
                 st.success("✅ Estado actualizado correctamente")
                 st.rerun()
 
+# ==============================================================================
+# MÓDULO 3: CONFIGURACIÓN GENERAL DEL SISTEMA
+# ==============================================================================
 elif pagina == "⚙️ Configuración":
     st.title("⚙️ Configuración General")
     precio_nombre = st.number_input("Precio Bordado de Nombre", min_value=0.0, value=float(obtener_parametro("precio_nombre") or 0.0), step=0.50)
@@ -526,6 +622,9 @@ elif pagina == "⚙️ Configuración":
         guardar_parametro("tasa_cambio", tasa_cambio)
         st.success("✅ Configuración actualizada")
 
+# ==============================================================================
+# MÓDULO 4: GESTIÓN DE CATÁLOGOS (COLEGIOS, DELIVERY, PRENDAS, MARCAS, TALLAS, COLORES)
+# ==============================================================================
 elif pagina == "🏫 Colegios":
     st.title("🏫 Gestión de Colegios")
     nombre_colegio = st.text_input("Nombre del Colegio")
@@ -656,6 +755,9 @@ elif pagina == "🎨 Colores":
                     eliminar_color(fila['id'])
                     st.rerun()
 
+# ==============================================================================
+# MÓDULO 5: RESPALDO DE BASE DE DATOS
+# ==============================================================================
 elif pagina == "💾 Respaldo":
     st.title("💾 Respaldo de Base de Datos")
     try:
