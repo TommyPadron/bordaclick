@@ -11,7 +11,7 @@ from email import encoders
 
 DATABASE = "bordaclick_dev.db"
 
-# Usamos variables de entorno para proteger contraseñas sensibles #
+# Usamos variables de entorno para proteger contraseñas sensibles 
 GMAIL_USER = st.secrets["GMAIL_USER"]
 GMAIL_PASS = st.secrets["GMAIL_PASS"]
 
