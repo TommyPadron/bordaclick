@@ -502,3 +502,62 @@ def enviar_notificacion_estado(destinatario, nombre_cliente, orden_id, fecha_ent
     servidor.login(remitente, password)
     servidor.send_message(mensaje)
     servidor.quit()
+
+import sqlite3
+
+def eliminar_orden(orden_id):
+    """
+    Elimina una orden, sus detalles de prendas y su historial de pagos.
+    """
+    conn = sqlite3.connect("bordaclick_dev.db")
+    cursor = conn.cursor()
+    try:
+        # 1. Eliminar los detalles de prendas (Tabla: orden_detalle)
+        cursor.execute("DELETE FROM orden_detalle WHERE orden_id = ?", (orden_id,))
+
+        # 2. Eliminar el historial de pagos (Tabla: historico_pagos)
+        cursor.execute("DELETE FROM historico_pagos WHERE orden_id = ?", (orden_id,))
+
+        # 3. Eliminar el registro principal (Tabla: ordenes)
+        cursor.execute("DELETE FROM ordenes WHERE id = ?", (orden_id,))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error al eliminar la orden #{orden_id}: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+
+
+import sqlite3
+
+def eliminar_orden(orden_id):
+    """
+    Elimina una orden, sus detalles de prendas y su historial de pagos.
+    """
+    conn = sqlite3.connect("bordaclick_dev.db")
+    cursor = conn.cursor()
+    try:
+        # 1. Eliminar los detalles de prendas (Tabla: orden_detalle)
+        cursor.execute("DELETE FROM orden_detalle WHERE orden_id = ?", (orden_id,))
+
+        # 2. Eliminar el historial de pagos (Tabla: historico_pagos)
+        cursor.execute("DELETE FROM historico_pagos WHERE orden_id = ?", (orden_id,))
+
+        # 3. Eliminar el registro principal (Tabla: ordenes)
+        cursor.execute("DELETE FROM ordenes WHERE id = ?", (orden_id,))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error al eliminar la orden #{orden_id}: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+
+

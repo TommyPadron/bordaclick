@@ -46,7 +46,8 @@ from db_handler import (
     registrar_pago,
     obtener_historico_pagos,
     actualizar_status_orden,
-    enviar_notificacion_estado
+    enviar_notificacion_estado,
+    eliminar_orden
 )
 
 # Generación de reportes PDF y Excel
@@ -59,10 +60,8 @@ from pdf_tools import (
 # ------------------------------------------------------------------------------
 # 2. INICIALIZACIÓN DE BASE DE DATOS Y CONFIGURACIÓN DE PÁGINA
 # ------------------------------------------------------------------------------
-# Se asegura de que la base de datos sqlite exista antes de cargar la interfaz
 crear_bd()
 
-# Configuración visual de la ventana y pestaña del navegador
 st.set_page_config(
     page_title="Bordaclick Clientes (DEV)",
     page_icon="🧵",
@@ -74,10 +73,8 @@ st.set_page_config(
 # ------------------------------------------------------------------------------
 clave_admin = st.sidebar.text_input("Clave Administrador", type="password")
 
-# Opciones visibles para clientes generales
 opciones_menu = ["📝 Nueva Solicitud"]
 
-# Habilita los módulos de gestión si la clave es correcta
 if clave_admin == "BordaAdmin2026*":
     opciones_menu.extend([
         "📋 Consultas",
@@ -97,13 +94,16 @@ pagina = st.sidebar.selectbox("Menú", opciones_menu)
 # 4. MEMORIA DE SESIÓN (SESSION STATE)
 # ------------------------------------------------------------------------------
 if "paso" not in st.session_state:
-    st.session_state.paso = 1  # Controla el paso actual del formulario (1 al 4)
+    st.session_state.paso = 1
 
 if "solicitud_enviada" not in st.session_state:
     st.session_state.solicitud_enviada = False
 
 if "colegios_agregados" not in st.session_state:
-    st.session_state.colegios_agregados = []  # Almacena colegios y prendas agregadas
+    st.session_state.colegios_agregados = []
+
+if "form_version" not in st.session_state:
+    st.session_state.form_version = 0
 
 # ------------------------------------------------------------------------------
 # 5. ENCABEZADO PRINCIPAL DE LA APLICACIÓN
@@ -128,17 +128,18 @@ if pagina == "📝 Nueva Solicitud":
 
     # --------------------------------------------------------------------------
     # PASO 1: DATOS DEL CLIENTE
-    # Captura información de contacto básica y valida su formato.
     # --------------------------------------------------------------------------
     if st.session_state.paso == 1:
         st.progress(25)
-        st.subheader("👤 Datos del Cliente")
+        st.subheader("👤 Datos de Contacto")
+        st.caption("Por favor, ingresa tus datos para gestionar tu solicitud de bordado.")
 
-        nombre = st.text_input("Nombre y Apellido", value=st.session_state.get("nombre", ""))
-        telefono = st.text_input("Teléfono", value=st.session_state.get("telefono", ""))
-        correo = st.text_input("Correo Electrónico", value=st.session_state.get("correo", ""))
+        with st.container(border=True):
+            nombre = st.text_input("Nombre y Apellido *", value=st.session_state.get("nombre", ""), placeholder="Ej. Ana Mendoza")
+            telefono = st.text_input("Teléfono de Contacto (WhatsApp) *", value=st.session_state.get("telefono", ""), placeholder="Ej. 04121234567")
+            correo = st.text_input("Correo Electrónico *", value=st.session_state.get("correo", ""), placeholder="ejemplo@correo.com")
 
-        if st.button("Continuar ➡️", use_container_width=True):
+        if st.button("Continuar a Selección de Prendas ➡️", use_container_width=True):
             if not nombre.strip():
                 st.error("Debe ingresar el nombre.")
             elif not telefono.strip() or len(telefono.strip()) < 10:
@@ -154,21 +155,16 @@ if pagina == "📝 Nueva Solicitud":
 
     # --------------------------------------------------------------------------
     # PASO 2: SELECCIÓN DE COLEGIO Y PRENDAS
-    # Permite añadir prendas a una lista temporal y agruparlas por colegio.
     # --------------------------------------------------------------------------
     elif st.session_state.paso == 2:
         st.progress(50)
         st.subheader("🏫 Colegio y Prendas")
 
-        # Cargar lista de colegios desde la base de datos
+        es_admin = (clave_admin == "BordaAdmin2026*")
+
         df_col = obtener_colegios()
         lista_colegios = ["Seleccione un colegio..."] + (df_col["nombre"].dropna().tolist() if not df_col.empty else [])
-        colegio = st.selectbox("Seleccione el Colegio", lista_colegios)
 
-        st.divider()
-        st.subheader("👕 Agregar Prenda")
-
-        # Cargar catálogos dinámicos
         df_p = obtener_tipos_prenda()
         lista_tipos_prenda = ["Seleccione una prenda..."] + (df_p["nombre"].dropna().tolist() if not df_p.empty else [])
 
@@ -181,18 +177,90 @@ if pagina == "📝 Nueva Solicitud":
         df_c = obtener_colores()
         lista_colores = ["Seleccione un color..."] + (df_c["nombre"].dropna().tolist() if not df_c.empty else [])
 
-        # Selección de atributos de la prenda
-        tipo_prenda = st.selectbox("Tipo de Prenda", lista_tipos_prenda, key="tipo_prenda_actual")
-        talla = st.selectbox("Talla", lista_tallas, key="talla_actual")
-        marca = st.selectbox("Marca", lista_marcas, key="marca_actual")
-        color = st.selectbox("Color", lista_colores, key="color_actual")
-        cantidad = st.number_input("Cantidad", min_value=1, value=1, key="cantidad_actual")
+        v = st.session_state.form_version
+
+        with st.container(border=True):
+            col_sel, col_btn = st.columns([4, 1] if es_admin else [1, 0.01])
+            with col_sel:
+                colegio = st.selectbox("Seleccione el Colegio *", lista_colegios, key=f"colegio_sel_{v}")
+            
+            if es_admin:
+                with col_btn:
+                    st.write("")
+                    with st.popover("➕"):
+                        st.markdown("**Nuevo Colegio**")
+                        nuevo_col_nom = st.text_input("Nombre", key=f"quick_col_nom_{v}")
+                        nuevo_col_prec = st.number_input("Precio Bordado", min_value=0.0, step=0.5, key=f"quick_col_prec_{v}")
+                        if st.button("Guardar", key=f"btn_quick_col_{v}"):
+                            if nuevo_col_nom.strip():
+                                guardar_colegio(nuevo_col_nom.strip(), nuevo_col_prec)
+                                st.success("¡Colegio agregado!")
+                                st.rerun()
+
+            if colegio != "Seleccione un colegio..." and not df_col.empty:
+                precio_base = obtener_precio_colegio(colegio)
+                st.info(f"💡 Precio base de bordado para **{colegio}**: **${precio_base:.2f}** por prenda.")
+
+        st.subheader("👕 Detalle de la Prenda")
+
+        with st.container(border=True):
+            c_p1, c_p2 = st.columns([4, 1] if es_admin else [1, 0.01])
+            with c_p1:
+                tipo_prenda = st.selectbox("Tipo de Prenda *", lista_tipos_prenda, key=f"tipo_prenda_{v}")
+            if es_admin:
+                with c_p2:
+                    st.write("")
+                    with st.popover("➕"):
+                        nuevo_p = st.text_input("Nueva Prenda", key=f"quick_p_{v}")
+                        if st.button("Guardar", key=f"btn_quick_p_{v}") and nuevo_p.strip():
+                            guardar_tipo_prenda(nuevo_p.strip())
+                            st.rerun()
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                c_t1, c_t2 = st.columns([3, 1] if es_admin else [1, 0.01])
+                with c_t1:
+                    talla = st.selectbox("Talla *", lista_tallas, key=f"talla_{v}")
+                if es_admin:
+                    with c_t2:
+                        st.write("")
+                        with st.popover("➕"):
+                            nueva_t = st.text_input("Nueva Talla", key=f"quick_t_{v}")
+                            if st.button("Guardar", key=f"btn_quick_t_{v}") and nueva_t.strip():
+                                guardar_talla(nueva_t.strip())
+                                st.rerun()
+
+                c_c1, c_c2 = st.columns([3, 1] if es_admin else [1, 0.01])
+                with c_c1:
+                    color = st.selectbox("Color *", lista_colores, key=f"color_{v}")
+                if es_admin:
+                    with c_c2:
+                        st.write("")
+                        with st.popover("➕"):
+                            nuevo_c = st.text_input("Nuevo Color", key=f"quick_c_{v}")
+                            if st.button("Guardar", key=f"btn_quick_c_{v}") and nuevo_c.strip():
+                                guardar_color(nuevo_c.strip())
+                                st.rerun()
+
+            with col_b:
+                c_m1, c_m2 = st.columns([3, 1] if es_admin else [1, 0.01])
+                with c_m1:
+                    marca = st.selectbox("Marca *", lista_marcas, key=f"marca_{v}")
+                if es_admin:
+                    with c_m2:
+                        st.write("")
+                        with st.popover("➕"):
+                            nueva_m = st.text_input("Nueva Marca", key=f"quick_m_{v}")
+                            if st.button("Guardar", key=f"btn_quick_m_{v}") and nueva_m.strip():
+                                guardar_marca(nueva_m.strip())
+                                st.rerun()
+
+                cantidad = st.number_input("Cantidad *", min_value=1, value=1, key=f"cantidad_{v}")
 
         if "prendas_actuales" not in st.session_state:
             st.session_state.prendas_actuales = []
 
-        # Botón para añadir la prenda a la lista en memoria
-        if st.button("➕ Agregar Prenda", use_container_width=True):
+        if st.button("➕ Agregar Prenda a este Colegio", use_container_width=True):
             if colegio == "Seleccione un colegio...":
                 st.error("Debe seleccionar un colegio.")
             elif tipo_prenda == "Seleccione una prenda...":
@@ -214,63 +282,63 @@ if pagina == "📝 Nueva Solicitud":
                 st.rerun()
 
         st.divider()
-        st.subheader("📋 Revise las prendas antes de guardar el colegio")
+        st.subheader("📋 Prendas del colegio en turno")
 
-        # Visualización y eliminación de prendas temporales
         if not st.session_state.prendas_actuales:
-            st.info("Aún no hay prendas agregadas para el colegio actual.")
+            st.info("Aún no has agregado prendas para el colegio seleccionado arriba.")
         else:
             for i, prenda in enumerate(st.session_state.prendas_actuales):
                 c1, c2 = st.columns([5, 1])
                 with c1:
-                    st.success(f"👕 {prenda['tipo']} | 📏 {prenda['talla']} | 🏷️ {prenda['marca']} | 🎨 {prenda['color']} | 🔢 {prenda['cantidad']}")
+                    st.success(f"👕 {prenda['tipo']} | 📏 {prenda['talla']} | 🏷️ {prenda['marca']} | 🎨 {prenda['color']} | 🔢 Cantidad: {prenda['cantidad']}")
                 with c2:
                     if st.button("🗑️", key=f"borrar_prenda_{i}"):
                         st.session_state.prendas_actuales.pop(i)
                         st.rerun()
 
-        st.divider()
-
-        # Botón para empaquetar las prendas bajo el colegio seleccionado
-        if st.button("💾 Guardar Colegio", use_container_width=True):
+        if st.button("💾 Guardar Colegio y sus Prendas", use_container_width=True):
             if not st.session_state.prendas_actuales:
-                st.error("Debe agregar al menos una prenda.")
+                st.error("Debe agregar al menos una prenda antes de guardar el colegio.")
             else:
                 if any(c["colegio"] == colegio for c in st.session_state.colegios_agregados):
-                    st.error("Ese colegio ya fue agregado.")
+                    st.error("Ese colegio ya fue agregado a la lista.")
                 else:
                     st.session_state.colegios_agregados.append({
                         "colegio": colegio,
                         "prendas": st.session_state.prendas_actuales.copy()
                     })
                     st.session_state.prendas_actuales = []
-                    st.success("✅ Colegio guardado correctamente")
+                    st.session_state.form_version += 1
+                    st.success("✅ Colegio y prendas guardados en tu solicitud.")
                     st.rerun()
 
-        # Resumen de colegios ya guardados
-        st.subheader("🏫 Colegios Agregados")
+        st.divider()
+
+        st.subheader("🏫 Lista General de Colegios Agregados")
         if not st.session_state.colegios_agregados:
-            st.info("Aún no hay colegios guardados.")
+            st.info("Aún no hay colegios listos en tu solicitud.")
         else:
             for idx_col, colegio_data in enumerate(st.session_state.colegios_agregados):
-                c_lbl, c_btn = st.columns([5, 1])
-                with c_lbl:
-                    st.success(f"🏫 {colegio_data['colegio']}")
-                with c_btn:
-                    if st.button("🗑️", key=f"del_col_agregado_{idx_col}"):
-                        st.session_state.colegios_agregados.pop(idx_col)
-                        st.rerun()
+                with st.container(border=True):
+                    c_lbl, c_btn = st.columns([5, 1])
+                    with c_lbl:
+                        st.markdown(f"### 🏫 {colegio_data['colegio']}")
+                    with c_btn:
+                        if st.button("🗑️", key=f"del_col_agregado_{idx_col}"):
+                            st.session_state.colegios_agregados.pop(idx_col)
+                            st.rerun()
 
-                for prenda in colegio_data["prendas"]:
-                    st.write(f"• {prenda['tipo']} ({prenda['talla']}) x {prenda['cantidad']}")
+                    for prenda in colegio_data["prendas"]:
+                        st.write(f"• **{prenda['tipo']}** ({prenda['talla']}) - {prenda['marca']} / {prenda['color']} x **{prenda['cantidad']} unid.**")
 
         st.divider()
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("➕ Agregar Otro Colegio", use_container_width=True):
+            if st.button("⬅️ Volver a Datos", use_container_width=True):
+                st.session_state.paso = 1
                 st.rerun()
         with col2:
-            if st.button("Continuar ➡️", use_container_width=True):
+            if st.button("Continuar a Personalización ➡️", use_container_width=True):
                 if not st.session_state.colegios_agregados:
                     st.error("Debe guardar al menos un colegio con prendas.")
                 else:
@@ -278,134 +346,159 @@ if pagina == "📝 Nueva Solicitud":
                     st.rerun()
 
     # --------------------------------------------------------------------------
-    # PASO 3: BORDADO Y DELIVERY
-    # Define especificaciones del logo, bordado de nombres y zona de entrega.
+    # PASO 3: PERSONALIZACIÓN Y DELIVERY
+    # Extracción dinámica de columna para evitar KeyError 'zona'
     # --------------------------------------------------------------------------
     elif st.session_state.paso == 3:
         st.progress(75)
-        st.subheader("🧵 Bordado y Delivery")
+        st.subheader("🧵 Personalización y Entrega")
 
-        tipo_logo = st.selectbox("Tipo de Logo", ["Diario", "Deporte", "Preescolar"], key="paso3_tipo_logo")
-        bordar_nombre = st.selectbox("¿Desea bordar nombres?", ["Seleccione una opción...", "No", "Sí"], index=0, key="paso3_bordar_nombre")
+        df_del = obtener_zonas_delivery()
+        lista_zonas = []
 
-        nombre_bordado = ""
-        cantidad_nombre = 0
-        total_prendas = sum(p["cantidad"] for c in st.session_state.colegios_agregados for p in c["prendas"])
+        if not df_del.empty:
+            # Detecta dinámicamente cuál es el nombre de la columna de la zona
+            col_zona = None
+            for col in ["zona", "nombre", "zona_delivery"]:
+                if col in df_del.columns:
+                    col_zona = col
+                    break
+            
+            # Si no coincide con ninguno, usa la primera columna disponible
+            if not col_zona and len(df_del.columns) > 0:
+                col_zona = df_del.columns[0]
 
-        if bordar_nombre == "Sí":
-            nombre_bordado = st.text_area("Detalle del nombre a bordar por prenda (ej. Suéter talla 10: Miranda Guerrero)", key="paso3_nombre_bordado")
-            cantidad_nombre = st.number_input("Cantidad de Prendas con Nombre", min_value=1, max_value=max(1, int(total_prendas)), value=1, key="paso3_cantidad_nombre")
-            st.caption(f"Máximo permitido: {total_prendas} prendas")
-        elif bordar_nombre == "No":
-            st.success("✅ Sin bordado de nombres")
+            if col_zona:
+                lista_zonas = df_del[col_zona].dropna().tolist()
+
+        with st.container(border=True):
+            st.markdown("### 🎨 Opciones de Bordado")
+            tipo_logo = st.selectbox(
+                "Tipo de Logo / Arte *",
+                ["Bordado Estándar del Colegio", "Personalizado / Diseñado por Cliente"],
+                key="input_tipo_logo"
+            )
+
+            bordar_nombre = st.radio(
+                "¿Desea bordar nombre personalizado en las prendas?",
+                ["No", "Sí"],
+                horizontal=True,
+                key="input_bordar_nombre"
+            )
+
+            nombre_bordado = ""
+            cantidad_nombre = 0
+            if bordar_nombre == "Sí":
+                nombre_bordado = st.text_input("Nombre / Texto a bordar", placeholder="Ej. Juan Pérez", key="input_texto_nombre")
+                cantidad_nombre = st.number_input("¿En cuántas prendas se aplicará el nombre?", min_value=1, value=1, key="input_cant_nombre")
+
+        with st.container(border=True):
+            st.markdown("### 🚚 Método de Entrega")
+            delivery = st.radio(
+                "¿Cómo desea recibir su pedido?",
+                ["Retiro en Tienda", "Envío a Domicilio (Delivery)"],
+                horizontal=True,
+                key="input_delivery"
+            )
+
+            zona_delivery = "N/A"
+            costo_delivery = 0.0
+
+            if delivery == "Envío a Domicilio (Delivery)":
+                if lista_zonas:
+                    zona_delivery = st.selectbox("Seleccione su zona de delivery *", lista_zonas, key="input_zona")
+                    costo_delivery = float(obtener_costo_delivery(zona_delivery) or 0.0)
+                    st.info(f"🛵 Costo de envío a **{zona_delivery}**: **${costo_delivery:.2f}**")
+                else:
+                    st.warning("No hay zonas de delivery configuradas en el sistema.")
 
         st.divider()
-        st.subheader("🚚 Delivery")
-
-        delivery = st.selectbox("¿Desea Delivery?", ["Seleccione una opción...", "No", "Sí"], index=0, key="paso3_delivery")
-        zona_delivery, costo_delivery = "", 0.0
-
-        if delivery == "Sí":
-            df_z = obtener_zonas_delivery()
-            lista_zonas = df_z["nombre"].dropna().tolist() if not df_z.empty else []
-            zona_delivery = st.selectbox("Zona de Delivery", lista_zonas, key="paso3_zona_delivery")
-            try:
-                costo_delivery = obtener_costo_delivery(zona_delivery)
-                st.success(f"🚚 Costo Delivery: ${costo_delivery:.2f}")
-            except Exception:
-                st.warning("No se pudo obtener el costo del delivery.")
-        elif delivery == "No":
-            st.info("📍 Retiro en tienda")
-
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("⬅️ Atrás", use_container_width=True):
+            if st.button("⬅️ Volver a Prendas", use_container_width=True):
                 st.session_state.paso = 2
                 st.rerun()
         with col2:
-            if st.button("Continuar ➡️", use_container_width=True):
-                if bordar_nombre == "Seleccione una opción...":
-                    st.error("Debe indicar si desea bordar nombres.")
-                elif delivery == "Seleccione una opción...":
-                    st.error("Debe indicar si desea delivery.")
-                elif bordar_nombre == "Sí" and not nombre_bordado.strip():
-                    st.error("Debe indicar el detalle del bordado.")
+            if st.button("Continuar al Resumen ➡️", use_container_width=True):
+                if bordar_nombre == "Sí" and not nombre_bordado.strip():
+                    st.error("Por favor, ingrese el nombre que desea bordar.")
                 else:
                     st.session_state.tipo_logo = tipo_logo
                     st.session_state.bordar_nombre = bordar_nombre
                     st.session_state.nombre_bordado = nombre_bordado
                     st.session_state.cantidad_nombre = cantidad_nombre
-                    st.session_state.delivery = delivery
+                    st.session_state.delivery = "Sí" if delivery == "Envío a Domicilio (Delivery)" else "No"
                     st.session_state.zona_delivery = zona_delivery
                     st.session_state.costo_delivery = costo_delivery
+                    
                     st.session_state.paso = 4
                     st.rerun()
 
     # --------------------------------------------------------------------------
     # PASO 4: RESUMEN Y CONFIRMACIÓN DE PEDIDO
-    # Muestra los totales finales, aplica promociones y guarda en BD.
     # --------------------------------------------------------------------------
     elif st.session_state.paso == 4:
         st.progress(100)
-        st.subheader("📋 Resumen de la Solicitud")
+        st.subheader("📋 Resumen Final de tu Solicitud")
 
-        st.success(f"👤 {st.session_state.nombre}")
-        st.write(f"📞 {st.session_state.telefono} | 📧 {st.session_state.correo}")
+        with st.container(border=True):
+            st.markdown(f"### 👤 {st.session_state.nombre}")
+            st.write(f"📞 **Teléfono:** {st.session_state.telefono}")
+            st.write(f"📧 **Correo:** {st.session_state.correo}")
 
-        st.subheader("🧵 Bordado")
-        st.write(f"Tipo Logo: {st.session_state.tipo_logo}")
-        st.write(f"Bordar Nombre: {st.session_state.bordar_nombre}")
-        if st.session_state.bordar_nombre == "Sí":
-            st.write(f"Detalle: {st.session_state.nombre_bordado}")
-            st.write(f"Cantidad: {st.session_state.cantidad_nombre}")
+        with st.container(border=True):
+            st.markdown("### 🧵 Detalles de Personalización")
+            st.write(f"• **Tipo de Logo:** {st.session_state.tipo_logo}")
+            st.write(f"• **Bordado de Nombre:** {st.session_state.bordar_nombre}")
+            if st.session_state.bordar_nombre == "Sí":
+                st.write(f"• **Detalle:** {st.session_state.nombre_bordado}")
+                st.write(f"• **Prendas con nombre:** {st.session_state.cantidad_nombre}")
 
-        # Cálculo automático de la fecha estimada de entrega
         dias_produccion = int(obtener_parametro("dias_produccion") or 3)
         fecha_entrega = date.today() + timedelta(days=dias_produccion)
 
-        st.subheader("💰 Resumen Financiero")
-        st.write(f"📅 Fecha estimada entrega: {fecha_entrega.strftime('%d/%m/%Y')}")
+        with st.container(border=True):
+            st.markdown("### 💰 Presupuesto Estimado")
+            st.info(f"📅 **Fecha estimada de entrega:** {fecha_entrega.strftime('%d/%m/%Y')}")
 
-        subtotal_bordado = 0.0
-        for colegio_data in st.session_state.colegios_agregados:
-            colegio_nombre = colegio_data["colegio"]
-            cantidad_colegio = sum(p["cantidad"] for p in colegio_data["prendas"])
-            precio_colegio = obtener_precio_colegio(colegio_nombre)
+            subtotal_bordado = 0.0
+            for colegio_data in st.session_state.colegios_agregados:
+                colegio_nombre = colegio_data["colegio"]
+                cantidad_colegio = sum(p["cantidad"] for p in colegio_data["prendas"])
+                precio_colegio = obtener_precio_colegio(colegio_nombre)
 
-            # Promoción: Descuento de $0.50 por prenda si el pedido por colegio suma 6 o más
-            if cantidad_colegio >= 6:
-                precio_colegio = max(0.0, precio_colegio - 0.50)
+                if cantidad_colegio >= 6:
+                    precio_colegio = max(0.0, precio_colegio - 0.50)
 
-            subtotal_colegio = cantidad_colegio * precio_colegio
-            subtotal_bordado += subtotal_colegio
+                subtotal_colegio = cantidad_colegio * precio_colegio
+                subtotal_bordado += subtotal_colegio
 
-            st.write(f"🏫 {colegio_nombre} {'(🎉 Promo desc. 6+ prendas)' if cantidad_colegio >= 6 else ''}")
-            st.write(f"   👕 {cantidad_colegio} prendas x ${precio_colegio:.2f} = ${subtotal_colegio:.2f}")
+                st.write(f"🏫 **{colegio_nombre}** {'🎉 *(Descuento de $0.50 aplicado por 6+ prendas)*' if cantidad_colegio >= 6 else ''}")
+                st.write(f"   ↳ {cantidad_colegio} prendas x ${precio_colegio:.2f} = **${subtotal_colegio:.2f}**")
 
-        # Cálculo de adicionales (nombres y delivery)
-        precio_nombre = float(obtener_parametro("precio_nombre") or 0)
-        subtotal_nombres = (st.session_state.cantidad_nombre * precio_nombre) if st.session_state.bordar_nombre == "Sí" else 0.0
+            precio_nombre = float(obtener_parametro("precio_nombre") or 0)
+            subtotal_nombres = (st.session_state.cantidad_nombre * precio_nombre) if st.session_state.bordar_nombre == "Sí" else 0.0
 
-        if st.session_state.bordar_nombre == "Sí":
-            st.write(f"🔤 {st.session_state.cantidad_nombre} nombres x ${precio_nombre:.2f} = ${subtotal_nombres:.2f}")
+            if st.session_state.bordar_nombre == "Sí":
+                st.write(f"🔤 **Nombres:** {st.session_state.cantidad_nombre} x ${precio_nombre:.2f} = **${subtotal_nombres:.2f}**")
 
-        st.write(f"🚚 Delivery = ${st.session_state.costo_delivery:.2f}")
-        total_estimado = subtotal_bordado + subtotal_nombres + st.session_state.costo_delivery
-        st.success(f"💳 Total Estimado = ${total_estimado:.2f}")
+            st.write(f"🚚 **Delivery ({st.session_state.zona_delivery if st.session_state.delivery == 'Sí' else 'Retiro en Tienda'}):** **${st.session_state.costo_delivery:.2f}**")
+            
+            total_estimado = subtotal_bordado + subtotal_nombres + st.session_state.costo_delivery
+            st.divider()
+            st.metric(label="Monto Total Estimado ($ USD)", value=f"${total_estimado:.2f}")
 
         st.divider()
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("⬅️ Atrás", use_container_width=True):
+            if st.button("⬅️ Modificar Datos", use_container_width=True):
                 st.session_state.paso = 3
                 st.rerun()
         with col2:
-            # Confirmación final y escritura en SQLite
-            if st.button("✅ Confirmar Solicitud", key="confirmar_solicitud_mobile", use_container_width=True, disabled=st.session_state.solicitud_enviada):
+            if st.button("✅ Confirmar y Enviar Solicitud", key="confirmar_solicitud_mobile", use_container_width=True, disabled=st.session_state.solicitud_enviada):
                 colegio_orden = "Múltiples Colegios" if len(st.session_state.colegios_agregados) > 1 else st.session_state.colegios_agregados[0]["colegio"]
                 cantidad_total = sum(p["cantidad"] for c in st.session_state.colegios_agregados for p in c["prendas"])
 
-                # Guardar cabecera de la orden
                 orden_id = guardar_orden(
                     st.session_state.nombre,
                     st.session_state.telefono,
@@ -427,7 +520,6 @@ if pagina == "📝 Nueva Solicitud":
                     "Recibido"
                 )
 
-                # Guardar líneas de detalle de la orden
                 for colegio_data in st.session_state.colegios_agregados:
                     for prenda in colegio_data["prendas"]:
                         guardar_detalle(
@@ -440,7 +532,6 @@ if pagina == "📝 Nueva Solicitud":
                             int(prenda["cantidad"])
                         )
 
-                # Notificación automática por correo
                 try:
                     enviar_confirmacion_solicitud(
                         st.session_state.correo,
@@ -456,11 +547,11 @@ if pagina == "📝 Nueva Solicitud":
                 st.rerun()
 
         if st.session_state.solicitud_enviada:
-            st.success(f"✅ Pedido #{st.session_state.ultimo_pedido:04d} creado correctamente")
-            st.success("📧 Correo de confirmación enviado.")
-            st.info("Tu solicitud fue recibida correctamente.")
+            st.balloons()
+            st.success(f"🎉 ¡Solicitud #{st.session_state.ultimo_pedido:04d} registrada con éxito!")
+            st.info("Te hemos enviado un correo electrónico con la confirmación.")
 
-            if st.button("➕ Nueva Solicitud", key="nueva_solicitud_mobile", use_container_width=True):
+            if st.button("➕ Crear otra Solicitud", key="nueva_solicitud_mobile", use_container_width=True):
                 st.session_state.clear()
                 st.rerun()
 
@@ -474,7 +565,6 @@ elif pagina == "📋 Consultas":
     if df_ordenes.empty:
         st.info("ℹ️ No hay órdenes registradas en la base de datos.")
     else:
-        # Descargar histórico masivo en Excel
         excel_hist_file = generar_excel_historico(df_ordenes)
         with open(excel_hist_file, "rb") as f:
             st.download_button(
@@ -488,35 +578,25 @@ elif pagina == "📋 Consultas":
 
         st.divider()
 
-        # Tabla resumen con listado de órdenes
         df_consulta = df_ordenes[["id", "nombre", "colegio", "status", "fecha_entrega", "saldo_pendiente", "fecha_pago"]].copy()
         df_consulta.columns = ["ID", "Cliente", "Colegio", "Estado", "Entrega", "Saldo", "Último Pago"]
         st.dataframe(df_consulta, use_container_width=True)
 
-        # Seleccionar orden individual para gestionar
         pedido_id = st.selectbox("Seleccione un pedido", df_ordenes["id"].tolist())
         st.info(f"📦 Pedido seleccionado: #{pedido_id:04d}")
 
         pedido = obtener_orden_por_id(pedido_id).iloc[0]
         st.write(f"👤 {pedido['nombre']} | 📞 {pedido['telefono']} | 📧 {pedido['correo']}")
 
-        # ----------------------------------------------------------------------
-        # SECCIÓN DE CONSULTAS: DETALLE DE PRENDAS DEL PEDIDO SELECCIONADO
-        # ----------------------------------------------------------------------
         detalle_orden = obtener_detalle_orden(pedido_id)
         with st.expander("👕 Prendas", expanded=True):
             if not detalle_orden.empty:
-                # 1. Muestra la tabla de prendas en la interfaz
                 st.dataframe(detalle_orden, use_container_width=True)
                 
-                # 2. Identifica la columna de cantidad dinámicamente (independiente de mayúsculas/minúsculas)
                 col_cantidad = next((col for col in detalle_orden.columns if col.lower() == "cantidad"), None)
                 
                 if col_cantidad:
-                    # 3. Calcula el total acumulado de prendas usando la columna encontrada
                     total_prendas_pedido = int(pd.to_numeric(detalle_orden[col_cantidad], errors="coerce").fillna(0).sum())
-                    
-                    # 4. Despliega el total de prendas en pantalla
                     st.metric(
                         label="Total de prendas en este pedido",
                         value=f"{total_prendas_pedido} unidades"
@@ -526,10 +606,6 @@ elif pagina == "📋 Consultas":
             else:
                 st.info("No hay prendas registradas para este pedido.")
 
-
-        # ----------------------------------------------------------------------
-        # SECCIÓN DE CONSULTAS: REGISTRO DE PAGOS Y TASA DE CAMBIO (USD / BS)
-        # ----------------------------------------------------------------------
         with st.expander("💰 Pagos y Tasa de Cambio (USD / Bs.)"):
             saldo = float(pedido.get("saldo_pendiente", 0))
             st.metric("Saldo Pendiente ($ USD)", f"${saldo:.2f}")
@@ -565,15 +641,11 @@ elif pagina == "📋 Consultas":
                     st.success("✅ Pago y registro en Bolívares guardados correctamente.")
                     st.rerun()
 
-            # Mostrar histórico de pagos efectuados
             df_hist_pagos = obtener_historico_pagos(pedido_id)
             if not df_hist_pagos.empty:
                 st.subheader("📜 Histórico de Pagos en Bolívares")
                 st.dataframe(df_hist_pagos[["monto_usd", "tasa_cambio", "monto_bs", "fecha"]], use_container_width=True)
 
-        # ----------------------------------------------------------------------
-        # SECCIÓN DE CONSULTAS: GENERACIÓN DE DOCUMENTOS (PDF / EXCEL)
-        # ----------------------------------------------------------------------
         with st.expander("📄 Documentos"):
             tasa_doc = st.number_input("Tasa para Comprobante PDF (Opcional)", min_value=0.0, value=float(obtener_parametro("tasa_cambio") or 0.0), step=0.10, key=f"tasa_pdf_{pedido_id}")
             
@@ -587,18 +659,12 @@ elif pagina == "📋 Consultas":
                 with open(excel_file, "rb") as f:
                     st.download_button("📥 Descargar Excel Pedido", f, file_name=excel_file, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-        # ----------------------------------------------------------------------
-        # SECCIÓN DE CONSULTAS: REENVÍO DE CORREOS
-        # ----------------------------------------------------------------------
         with st.expander("📧 Comunicaciones"):
             if st.button("📧 Reenviar Correo"):
                 pdf_file = generar_pdf_orden(pedido, detalle_orden)
                 enviar_pdf_por_correo(pedido["correo"], pedido["nombre"], pedido["id"], pedido["fecha_entrega"], pdf_file)
                 st.success("✅ Correo reenviado")
 
-        # ----------------------------------------------------------------------
-        # SECCIÓN DE CONSULTAS: ACTUALIZACIÓN DE ESTADO Y ESTATUS EN PRODUCCIÓN
-        # ----------------------------------------------------------------------
         with st.expander("🏭 Producción"):
             nuevo_estado = st.selectbox("Cambiar estado", ["Recibido", "En Producción", "Listo para Entrega", "Anulado"])
             if st.button("🔄 Actualizar Estado"):
@@ -606,162 +672,242 @@ elif pagina == "📋 Consultas":
                 enviar_notificacion_estado(pedido["correo"], pedido["nombre"], pedido["id"], pedido["fecha_entrega"], nuevo_estado, pedido["delivery"])
                 st.success("✅ Estado actualizado correctamente")
                 st.rerun()
+        # ==============================================================================
+        # NUEVA SECCIÓN: ELIMINACIÓN DE PEDIDO
+        # ==============================================================================
+        with st.expander("🗑️ Zona de Peligro / Eliminar Pedido"):
+            st.error("⚠️ **Atención:** Esta acción es permanente. Se eliminará la orden, sus ítems y sus pagos registrados.")
+            
+            # Casilla de confirmación previa para evitar clics accidentales
+            confirmar = st.checkbox(f"Estoy seguro de que deseo eliminar la Orden #{pedido_id:04d}", key=f"chk_confirm_{pedido_id}")
+            
+            if st.button("🗑️ Eliminar Pedido Definitivamente", key=f"btn_del_{pedido_id}"):
+                if confirmar:
+                    if eliminar_orden(pedido_id):
+                        st.success(f"✅ La Orden #{pedido_id:04d} ha sido eliminada correctamente.")
+                        st.rerun()
+                    else:
+                        st.error("❌ Ocurrió un error al intentar borrar el pedido de la base de datos.")
+                else:
+                    st.warning("⚠️ Marca la casilla de verificación anterior para confirmar la eliminación.")
+# ==============================================================================
+# SECCIONES ADMINISTRATIVAS: GESTIÓN DE CATÁLOGOS Y TABLAS
+# ==============================================================================
 
-# ==============================================================================
-# MÓDULO 3: CONFIGURACIÓN GENERAL DEL SISTEMA
-# ==============================================================================
-elif pagina == "⚙️ Configuración":
-    st.title("⚙️ Configuración General")
-    precio_nombre = st.number_input("Precio Bordado de Nombre", min_value=0.0, value=float(obtener_parametro("precio_nombre") or 0.0), step=0.50)
-    dias_produccion = st.number_input("Días de Producción", min_value=1, value=int(obtener_parametro("dias_produccion") or 3), step=1)
-    tasa_cambio = st.number_input("Tasa de Cambio Predeterminada (Bs / $)", min_value=0.0, value=float(obtener_parametro("tasa_cambio") or 0.0), step=0.50)
-
-    if st.button("💾 Guardar Configuración"):
-        guardar_parametro("precio_nombre", precio_nombre)
-        guardar_parametro("dias_produccion", dias_produccion)
-        guardar_parametro("tasa_cambio", tasa_cambio)
-        st.success("✅ Configuración actualizada")
-
-# ==============================================================================
-# MÓDULO 4: GESTIÓN DE CATÁLOGOS (COLEGIOS, DELIVERY, PRENDAS, MARCAS, TALLAS, COLORES)
-# ==============================================================================
+# ------------------------------------------------------------------------------
+# 1. GESTIÓN DE COLEGIOS
+# ------------------------------------------------------------------------------
 elif pagina == "🏫 Colegios":
     st.title("🏫 Gestión de Colegios")
-    nombre_colegio = st.text_input("Nombre del Colegio")
-    precio_colegio = st.number_input("Precio Bordado Colegio", min_value=0.0, step=0.50)
-
-    if st.button("💾 Guardar Colegio"):
-        if nombre_colegio:
-            guardar_colegio(nombre_colegio, precio_colegio)
-            st.success("✅ Colegio guardado/actualizado")
-            st.rerun()
-        else:
-            st.error("Ingrese el nombre del colegio.")
-
-    df_c = obtener_colegios()
-    if not df_c.empty:
-        st.divider()
-        st.subheader("📋 Lista de Colegios Registrados")
-        for _, fila in df_c.iterrows():
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.write(f"🏫 **{fila['nombre']}** - ${fila['precio_bordado']:.2f}")
-            with c2:
-                if st.button("🗑️", key=f"del_col_{fila['id']}"):
-                    eliminar_colegio(fila['id'])
-                    st.rerun()
-
-elif pagina == "🚚 Delivery":
-    st.title("🚚 Gestión de Delivery")
-    nombre_zona = st.text_input("Nombre de la Zona")
-    costo_zona = st.number_input("Costo Delivery", min_value=0.0, step=1.0)
-
-    if st.button("💾 Guardar Zona Delivery"):
-        if nombre_zona:
-            guardar_zona_delivery(nombre_zona, costo_zona)
-            st.success("✅ Zona Guardada/Actualizada")
-            st.rerun()
-
-    df_z = obtener_zonas_delivery()
-    if not df_z.empty:
-        st.divider()
-        st.subheader("📋 Zonas Registradas")
-        for _, fila in df_z.iterrows():
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.write(f"🚚 **{fila['nombre']}** - ${fila['costo']:.2f}")
-            with c2:
-                if st.button("🗑️", key=f"del_zona_{fila['nombre']}"):
-                    eliminar_zona_delivery(fila['nombre'])
-                    st.rerun()
-
-elif pagina == "📦 Prendas":
-    st.title("📦 Gestión de Prendas")
-    tipo = st.text_input("Nombre Tipo Prenda")
-    if st.button("💾 Guardar"):
-        if tipo:
-            guardar_tipo_prenda(tipo)
-            st.rerun()
     
-    df_items = obtener_tipos_prenda()
-    if not df_items.empty:
-        st.divider()
-        for _, fila in df_items.iterrows():
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.write(f"👕 {fila['nombre']}")
-            with c2:
-                if st.button("🗑️", key=f"del_prenda_{fila['id']}"):
-                    eliminar_tipo_prenda(fila['id'])
-                    st.rerun()
+    with st.container(border=True):
+        nombre_colegio = st.text_input("Nombre del Colegio", key="admin_nom_colegio")
+        precio_colegio = st.number_input("Precio Bordado Colegio ($ USD)", min_value=0.0, step=0.50, key="admin_precio_colegio")
+        
+        if st.button("💾 Guardar Colegio", use_container_width=True, key="btn_save_colegio"):
+            if nombre_colegio.strip():
+                # Llamada directa a tu función existente en db_handler.py
+                guardar_colegio(nombre_colegio.strip(), precio_colegio)
+                st.success(f"✅ Colegio '{nombre_colegio}' registrado con éxito.")
+                st.rerun()
+            else:
+                st.warning("⚠️ El nombre del colegio no puede estar vacío.")
 
+    st.divider()
+    st.subheader("📋 Registros Actuales")
+    
+    # Consulta directa de los colegios usando tu función existente
+    df_colegios = obtener_colegios() if 'obtener_colegios' in globals() else pd.DataFrame()
+    
+    if not df_colegios.empty:
+        st.dataframe(df_colegios, use_container_width=True)
+        
+        with st.expander("🗑️ Eliminar un Colegio"):
+            opciones_col = {f"{row['nombre']} ($ {row['precio_bordado']})": row['id'] for _, row in df_colegios.iterrows()}
+            seleccion_col = st.selectbox("Seleccione el colegio a eliminar:", list(opciones_col.keys()), key="del_col_select")
+            
+            if st.button("🗑️ Eliminar Colegio", key="btn_del_col"):
+                eliminar_colegio(opciones_col[seleccion_col])
+                st.success("✅ Colegio eliminado con éxito.")
+                st.rerun()
+    else:
+        st.info("No hay colegios registrados o la tabla está vacía.")
+# ------------------------------------------------------------------------------
+# 2. GESTIÓN DE DELIVERY
+# ------------------------------------------------------------------------------
+elif pagina == "🚚 Delivery":
+    st.title("🚚 Gestión de Zonas de Delivery")
+    
+    with st.container(border=True):
+        zona = st.text_input("Nombre de la Zona / Sector", key="admin_zona_deliv")
+        precio_delivery = st.number_input("Costo de Envío ($ USD)", min_value=0.0, step=0.50, key="admin_precio_deliv")
+        if st.button("💾 Guardar Zona", use_container_width=True, key="btn_save_deliv"):
+            if zona.strip():
+                guardar_zona_delivery(zona, precio_delivery) if 'guardar_zona_delivery' in globals() else None
+                st.success(f"✅ Zona '{zona}' guardada.")
+                st.rerun()
+            else:
+                st.warning("⚠️ Ingrese el nombre de la zona.")
+
+    st.divider()
+    st.subheader("📋 Registros Actuales")
+    df_delivery = obtener_zonas_delivery() if 'obtener_zonas_delivery' in globals() else pd.DataFrame()
+    if not df_delivery.empty:
+        st.dataframe(df_delivery, use_container_width=True)
+        with st.expander("🗑️ Eliminar una Zona"):
+            opciones = {f"{row.get('nombre', 'Zona')} (ID: {row.get('id', 0)})": row.get('id', 0) for _, row in df_delivery.iterrows()}
+            seleccion = st.selectbox("Seleccione la zona a eliminar:", list(opciones.keys()), key="del_deliv_select")
+            if st.button("🗑️ Eliminar Zona", key="btn_del_deliv"):
+                if 'eliminar_zona_delivery' in globals():
+                    eliminar_zona_delivery(opciones[seleccion])
+                    st.success("✅ Zona eliminada con éxito.")
+                    st.rerun()
+    else:
+        st.info("No hay zonas de delivery registradas.")
+
+# ------------------------------------------------------------------------------
+# 3. GESTIÓN DE PRENDAS
+# ------------------------------------------------------------------------------
+elif pagina == "📦 Prendas":
+    st.title("📦 Gestión de Tipos de Prenda")
+    
+    with st.container(border=True):
+        tipo_prenda = st.text_input("Nombre del Tipo de Prenda", key="admin_tipo_prenda")
+        if st.button("💾 Guardar Tipo de Prenda", use_container_width=True, key="btn_save_prenda"):
+            if tipo_prenda.strip():
+                guardar_tipo_prenda(tipo_prenda) if 'guardar_tipo_prenda' in globals() else None
+                st.success(f"✅ Prenda '{tipo_prenda}' guardada.")
+                st.rerun()
+            else:
+                st.warning("⚠️ Ingrese el nombre de la prenda.")
+
+    st.divider()
+    st.subheader("📋 Registros Actuales")
+    df_prendas = obtener_tipos_prenda() if 'obtener_tipos_prenda' in globals() else pd.DataFrame()
+    if not df_prendas.empty:
+        st.dataframe(df_prendas, use_container_width=True)
+        with st.expander("🗑️ Eliminar un Tipo de Prenda"):
+            opciones = {f"{row.get('nombre', 'Prenda')} (ID: {row.get('id', 0)})": row.get('id', 0) for _, row in df_prendas.iterrows()}
+            seleccion = st.selectbox("Seleccione la prenda a eliminar:", list(opciones.keys()), key="del_prenda_select")
+            if st.button("🗑️ Eliminar Prenda", key="btn_del_prenda"):
+                if 'eliminar_tipo_prenda' in globals():
+                    eliminar_tipo_prenda(opciones[seleccion])
+                    st.success("✅ Prenda eliminada con éxito.")
+                    st.rerun()
+    else:
+        st.info("No hay tipos de prenda registrados.")
+
+# ------------------------------------------------------------------------------
+# 4. GESTIÓN DE MARCAS
+# ------------------------------------------------------------------------------
 elif pagina == "🏷️ Marcas":
     st.title("🏷️ Gestión de Marcas")
-    marca = st.text_input("Marca")
-    if st.button("💾 Guardar"):
-        if marca:
-            guardar_marca(marca)
-            st.rerun()
+    
+    with st.container(border=True):
+        marca = st.text_input("Nombre de la Marca", key="admin_marca")
+        if st.button("💾 Guardar Marca", use_container_width=True, key="btn_save_marca"):
+            if marca.strip():
+                guardar_marca(marca) if 'guardar_marca' in globals() else None
+                st.success(f"✅ Marca '{marca}' guardada.")
+                st.rerun()
+            else:
+                st.warning("⚠️ Ingrese el nombre de la marca.")
 
-    df_items = obtener_marcas()
-    if not df_items.empty:
-        st.divider()
-        for _, fila in df_items.iterrows():
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.write(f"🏷️ {fila['nombre']}")
-            with c2:
-                if st.button("🗑️", key=f"del_marca_{fila['id']}"):
-                    eliminar_marca(fila['id'])
+    st.divider()
+    st.subheader("📋 Registros Actuales")
+    df_marcas = obtener_marcas() if 'obtener_marcas' in globals() else pd.DataFrame()
+    if not df_marcas.empty:
+        st.dataframe(df_marcas, use_container_width=True)
+        with st.expander("🗑️ Eliminar una Marca"):
+            opciones = {f"{row.get('nombre', 'Marca')} (ID: {row.get('id', 0)})": row.get('id', 0) for _, row in df_marcas.iterrows()}
+            seleccion = st.selectbox("Seleccione la marca a eliminar:", list(opciones.keys()), key="del_marca_select")
+            if st.button("🗑️ Eliminar Marca", key="btn_del_marca"):
+                if 'eliminar_marca' in globals():
+                    eliminar_marca(opciones[seleccion])
+                    st.success("✅ Marca eliminada con éxito.")
                     st.rerun()
+    else:
+        st.info("No hay marcas registradas.")
 
+# ------------------------------------------------------------------------------
+# 5. GESTIÓN DE TALLAS
+# ------------------------------------------------------------------------------
 elif pagina == "📏 Tallas":
     st.title("📏 Gestión de Tallas")
-    talla = st.text_input("Talla")
-    if st.button("💾 Guardar"):
-        if talla:
-            guardar_talla(talla)
-            st.rerun()
+    
+    with st.container(border=True):
+        talla = st.text_input("Identificador de Talla", key="admin_talla")
+        if st.button("💾 Guardar Talla", use_container_width=True, key="btn_save_talla"):
+            if talla.strip():
+                guardar_talla(talla) if 'guardar_talla' in globals() else None
+                st.success(f"✅ Talla '{talla}' guardada.")
+                st.rerun()
+            else:
+                st.warning("⚠️ Ingrese una talla.")
 
-    df_items = obtener_tallas()
-    if not df_items.empty:
-        st.divider()
-        for _, fila in df_items.iterrows():
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.write(f"📏 {fila['nombre']}")
-            with c2:
-                if st.button("🗑️", key=f"del_talla_{fila['id']}"):
-                    eliminar_talla(fila['id'])
+    st.divider()
+    st.subheader("📋 Registros Actuales")
+    df_tallas = obtener_tallas() if 'obtener_tallas' in globals() else pd.DataFrame()
+    if not df_tallas.empty:
+        st.dataframe(df_tallas, use_container_width=True)
+        with st.expander("🗑️ Eliminar una Talla"):
+            opciones = {f"{row.get('nombre', 'Talla')} (ID: {row.get('id', 0)})": row.get('id', 0) for _, row in df_tallas.iterrows()}
+            seleccion = st.selectbox("Seleccione la talla a eliminar:", list(opciones.keys()), key="del_talla_select")
+            if st.button("🗑️ Eliminar Talla", key="btn_del_talla"):
+                if 'eliminar_talla' in globals():
+                    eliminar_talla(opciones[seleccion])
+                    st.success("✅ Talla eliminada con éxito.")
                     st.rerun()
+    else:
+        st.info("No hay tallas registradas.")
 
+# ------------------------------------------------------------------------------
+# 6. GESTIÓN DE COLORES
+# ------------------------------------------------------------------------------
 elif pagina == "🎨 Colores":
     st.title("🎨 Gestión de Colores")
-    color = st.text_input("Color")
-    if st.button("💾 Guardar"):
-        if color:
-            guardar_color(color)
-            st.rerun()
+    
+    with st.container(border=True):
+        color = st.text_input("Nombre del Color", key="admin_color")
+        if st.button("💾 Guardar Color", use_container_width=True, key="btn_save_color"):
+            if color.strip():
+                guardar_color(color) if 'guardar_color' in globals() else None
+                st.success(f"✅ Color '{color}' guardado.")
+                st.rerun()
+            else:
+                st.warning("⚠️ Ingrese un color.")
 
-    df_items = obtener_colores()
-    if not df_items.empty:
-        st.divider()
-        for _, fila in df_items.iterrows():
-            c1, c2 = st.columns([5, 1])
-            with c1:
-                st.write(f"🎨 {fila['nombre']}")
-            with c2:
-                if st.button("🗑️", key=f"del_color_{fila['id']}"):
-                    eliminar_color(fila['id'])
+    st.divider()
+    st.subheader("📋 Registros Actuales")
+    df_colores = obtener_colores() if 'obtener_colores' in globals() else pd.DataFrame()
+    if not df_colores.empty:
+        st.dataframe(df_colores, use_container_width=True)
+        with st.expander("🗑️ Eliminar un Color"):
+            opciones = {f"{row.get('nombre', 'Color')} (ID: {row.get('id', 0)})": row.get('id', 0) for _, row in df_colores.iterrows()}
+            seleccion = st.selectbox("Seleccione el color a eliminar:", list(opciones.keys()), key="del_color_select")
+            if st.button("🗑️ Eliminar Color", key="btn_del_color"):
+                if 'eliminar_color' in globals():
+                    eliminar_color(opciones[seleccion])
+                    st.success("✅ Color eliminado con éxito.")
                     st.rerun()
+    else:
+        st.info("No hay colores registrados.")
 
-# ==============================================================================
-# MÓDULO 5: RESPALDO DE BASE DE DATOS
-# ==============================================================================
+# ------------------------------------------------------------------------------
+# 7. RESPALDO DE BASE DE DATOS
+# ------------------------------------------------------------------------------
 elif pagina == "💾 Respaldo":
     st.title("💾 Respaldo de Base de Datos")
-    try:
-        with open("bordaclick_dev.db", "rb") as f:
-            st.download_button("📥 Descargar Base de Datos (DEV)", data=f, file_name="bordaclick_dev_backup.db", mime="application/octet-stream")
-    except Exception as e:
-        st.error(f"No se pudo cargar la base de datos de desarrollo: {e}")
+    with st.container(border=True):
+        try:
+            with open("bordaclick_dev.db", "rb") as db_file:
+                st.download_button(
+                    label="📥 Descargar Base de Datos (bordaclick_dev.db)",
+                    data=db_file,
+                    file_name="bordaclick_dev_backup.db",
+                    mime="application/x-sqlite3",
+                    use_container_width=True,
+                    key="btn_download_db"
+                )
+        except Exception as e:
+            st.error(f"❌ Error al leer la base de datos: {e}")
